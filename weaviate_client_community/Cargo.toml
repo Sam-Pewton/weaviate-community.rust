@@ -1,5 +1,5 @@
 [package]
-name = "weaviate-client-unofficial"
+name = "weaviate_client_community"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,3 +9,4 @@ edition = "2021"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 tokio = { version = "1", features = ["full"] }
 serde_json = { version = "1" }
+serde = { version = "1.0", features = ["derive"] }
