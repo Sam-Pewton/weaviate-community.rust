@@ -66,15 +66,30 @@ impl Client {
 
 #[cfg(test)]
 mod tests {
+    use crate::schema::Class;
+
     use super::*;
 
-    #[tokio::test]
-    async fn it_works() {
-        let client = Client::new("http://localhost:8080").unwrap();
-        //let test = client.schema.get(None).await;
-        let test = client.schema.get(Some("Embeddings")).await;
-        //let test = client.schema.get_single_class("Embeddings").await;
-        println!("{:#?}", test);
-        //assert_eq!("http://localhost:8080", client.base_url);
-    }
+    //#[tokio::test]
+    //async fn it_works() {
+    //    let class = Class {
+    //        class: "Test".into(),
+    //        description: "Test".into(),
+    //        properties: None,
+    //        vector_index_type: None,
+    //        vector_index_config: None,
+    //        vectorizer: None,
+    //        module_config: None,
+    //        inverted_index_config: None,
+    //        sharding_config: None,
+    //        multi_tenancy_config: None,
+    //    };
+    //    let client = Client::new("http://localhost:8080").unwrap();
+    //    client.schema.create_class(class).await;
+    //    let test = client.schema.get(None).await;
+    //    //let test = client.schema.get(Some("Embeddings")).await;
+    //    //let test = client.schema.get_single_class("Embeddings").await;
+    //    println!("{:#?}", test);
+    //    //assert_eq!("http://localhost:8080", client.base_url);
+    //}
 }
