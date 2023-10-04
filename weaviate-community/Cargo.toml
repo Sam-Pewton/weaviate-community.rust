@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "community weaviate client library"
 keywords = ["weaviate", "vector"]
 repository = "https://github.com/Sam-Pewton/weaviate-community.rust"
-documentation = ""
 authors = ["Sam Pewton <s.pewton@outlook.com>"]
 readme = "README.md"
 license = "MIT"
