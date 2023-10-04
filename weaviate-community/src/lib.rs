@@ -5,6 +5,7 @@
 mod backups;
 mod batch;
 mod classification;
+pub mod collections;
 mod meta;
 mod modules;
 mod nodes;
@@ -14,6 +15,7 @@ mod schema;
 pub use self::backups::_Backups;
 pub use self::batch::_Batch;
 pub use self::classification::_Classification;
+pub use self::collections::Class;
 pub use self::meta::_Meta;
 pub use self::modules::_Modules;
 pub use self::nodes::_Nodes;
