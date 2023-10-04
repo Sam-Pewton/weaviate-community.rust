@@ -11,14 +11,14 @@ mod nodes;
 mod objects;
 mod oidc;
 mod schema;
-pub use self::backups::Backups;
-pub use self::batch::Batch;
-pub use self::classification::Classification;
-pub use self::meta::Meta;
-pub use self::modules::Modules;
-pub use self::nodes::Nodes;
-pub use self::objects::Objects;
-pub use self::oidc::OIDC;
+pub use self::backups::_Backups;
+pub use self::batch::_Batch;
+pub use self::classification::_Classification;
+pub use self::meta::_Meta;
+pub use self::modules::_Modules;
+pub use self::nodes::_Nodes;
+pub use self::objects::_Objects;
+pub use self::oidc::_OIDC;
 pub use self::schema::Schema;
 
 use reqwest::Url;
@@ -27,28 +27,28 @@ use std::error::Error;
 pub struct Client {
     pub base_url: Url,
     pub schema: Schema,
-    pub objects: Objects,
-    pub batch: Batch,
-    pub backups: Backups,
-    pub classification: Classification,
-    pub meta: Meta,
-    pub nodes: Nodes,
-    pub oidc: OIDC,
-    pub modules: Modules,
+    pub objects: _Objects,
+    pub batch: _Batch,
+    pub backups: _Backups,
+    pub classification: _Classification,
+    pub meta: _Meta,
+    pub nodes: _Nodes,
+    pub oidc: _OIDC,
+    pub modules: _Modules,
 }
 
 impl Client {
     pub fn new(url: &str) -> Result<Self, Box<dyn Error>> {
         let base = Url::parse(url)?;
         let schema = Schema::new(&base)?;
-        let objects = Objects::new(&base)?;
-        let batch = Batch::new(&base)?;
-        let backups = Backups::new(&base)?;
-        let classification = Classification::new(&base)?;
-        let meta = Meta::new(&base)?;
-        let nodes = Nodes::new(&base)?;
-        let oidc = OIDC::new(&base)?;
-        let modules = Modules::new(&base)?;
+        let objects = _Objects::new(&base)?;
+        let batch = _Batch::new(&base)?;
+        let backups = _Backups::new(&base)?;
+        let classification = _Classification::new(&base)?;
+        let meta = _Meta::new(&base)?;
+        let nodes = _Nodes::new(&base)?;
+        let oidc = _OIDC::new(&base)?;
+        let modules = _Modules::new(&base)?;
         Ok(Client {
             base_url: base,
             schema,
@@ -66,9 +66,9 @@ impl Client {
 
 #[cfg(test)]
 mod tests {
-    use crate::schema::Class;
+    //use crate::schema::Class;
 
-    use super::*;
+    //use super::*;
 
     //#[tokio::test]
     //async fn it_works() {

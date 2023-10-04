@@ -1,13 +1,13 @@
 use reqwest::Url;
 use std::error::Error;
 
-pub struct Objects {
-    endpoint: Url,
+pub struct _Objects {
+    _endpoint: Url,
 }
 
-impl Objects {
+impl _Objects {
     pub fn new(url: &Url) -> Result<Self, Box<dyn Error>> {
-        let endpoint = url.join("/v1/objects")?;
-        Ok(Objects { endpoint })
+        let _endpoint = url.join("/v1/objects")?;
+        Ok(_Objects { _endpoint })
     }
 }
