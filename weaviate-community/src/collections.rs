@@ -82,7 +82,7 @@ impl ShardStatus {
 pub struct Tenant {
     pub name: String,
     #[serde(default = "default_activity_status")]
-    pub activity_status: Option<ActivityStatus>
+    pub activity_status: Option<ActivityStatus>,
 }
 
 fn default_activity_status() -> Option<ActivityStatus> {

@@ -2,9 +2,8 @@ use crate::collections::{Class, Property, ShardStatus, Tenant};
 use reqwest::{Response, Url};
 use std::error::Error;
 
-/// All schema related endpoints and functionality described in Weaviate API documentation.
-///
-/// https://weaviate.io/developers/weaviate/api/rest/schema
+/// All schema related endpoints and functionality described in 
+/// [Weaviate schema API documentation](https://weaviate.io/developers/weaviate/api/rest/schema)
 ///
 pub struct Schema {
     endpoint: Url,
@@ -55,6 +54,10 @@ impl Schema {
 
     ///
     /// Create a new data object class in the schema.
+    ///
+    /// Note that from 1.5.0, creating a schema is optional, as Auto Schema is available. See for 
+    /// more info:
+    /// [Weaviate auto-schema documentation](https://weaviate.io/developers/weaviate/config-refs/schema#auto-schema)
     ///
     /// POST /v1/schema
     /// ```
@@ -186,10 +189,14 @@ impl Schema {
         Ok(res)
     }
 
-    /// 
+    ///
     /// Add tenant
     ///
-    pub async fn add_tenants(&self, class_name: &str, tenants: &Vec<Tenant>) -> Result<reqwest::Response, Box<dyn Error>> {
+    pub async fn add_tenants(
+        &self,
+        class_name: &str,
+        tenants: &Vec<Tenant>,
+    ) -> Result<reqwest::Response, Box<dyn Error>> {
         let mut endpoint = class_name.to_string();
         endpoint.push_str("/tenants");
         let endpoint = self.endpoint.join(&endpoint)?;
@@ -198,10 +205,14 @@ impl Schema {
         Ok(res)
     }
 
-    /// 
+    ///
     /// Remove tenants
     ///
-    pub async fn remove_tenants(&self, class_name: &str, tenants: &Vec<&str>) -> Result<reqwest::Response, Box<dyn Error>> {
+    pub async fn remove_tenants(
+        &self,
+        class_name: &str,
+        tenants: &Vec<&str>,
+    ) -> Result<reqwest::Response, Box<dyn Error>> {
         let mut endpoint = class_name.to_string();
         endpoint.push_str("/tenants");
         let endpoint = self.endpoint.join(&endpoint)?;
@@ -210,14 +221,18 @@ impl Schema {
         Ok(res)
     }
 
-    /// 
+    ///
     /// Update tenants
     ///
     /// For updating tenants, both `name` and `activity_status` are required.
     ///
     /// Note that tenant activity status setting is only available from Weaviate v1.21
     ///
-    pub async fn update_tenants(&self, class_name: &str, tenants: &Vec<Tenant>) -> Result<reqwest::Response, Box<dyn Error>> {
+    pub async fn update_tenants(
+        &self,
+        class_name: &str,
+        tenants: &Vec<Tenant>,
+    ) -> Result<reqwest::Response, Box<dyn Error>> {
         let mut endpoint = class_name.to_string();
         endpoint.push_str("/tenants");
         let endpoint = self.endpoint.join(&endpoint)?;
@@ -233,7 +248,9 @@ mod tests {
     // Tests currently require a weaviate instance to be running on localhost, as I have not yet
     // implemented anything to mock the database. In future, actual tests will run as integration
     // tests in a container as part of the CICD process.
-    use crate::collections::{Class, MultiTenancyConfig, Property, ShardStatus, Tenant, ActivityStatus};
+    use crate::collections::{
+        ActivityStatus, Class, MultiTenancyConfig, Property, ShardStatus, Tenant,
+    };
     use crate::Client;
 
     ///
@@ -269,13 +286,19 @@ mod tests {
         }
     }
 
-    /// 
+    ///
     /// Helper function for generating some test tenants, as shown on the weaviate API webpage.
     ///
     fn test_tenants() -> Vec<Tenant> {
         vec![
-            Tenant { name: "TENANT_A".into(), activity_status: None },
-            Tenant { name: "TENANT_B".into(), activity_status: Some(ActivityStatus::COLD) }
+            Tenant {
+                name: "TENANT_A".into(),
+                activity_status: None,
+            },
+            Tenant {
+                name: "TENANT_B".into(),
+                activity_status: Some(ActivityStatus::COLD),
+            },
         ]
     }
 
@@ -449,8 +472,8 @@ mod tests {
             result.unwrap().json::<serde_json::Value>().await.unwrap()
         );
 
-        tenants[0].activity_status = Some(ActivityStatus::COLD); 
-        tenants[1].activity_status = Some(ActivityStatus::COLD); 
+        tenants[0].activity_status = Some(ActivityStatus::COLD);
+        tenants[1].activity_status = Some(ActivityStatus::COLD);
         let result = client.schema.update_tenants(&class.class, &tenants).await;
         //assert_eq!(200, result.as_ref().unwrap().status());
         println!(
@@ -465,7 +488,10 @@ mod tests {
             result.unwrap().json::<serde_json::Value>().await.unwrap()
         );
 
-        let result = client.schema.remove_tenants(&class.class, &vec!["TENANT_A", "TENANT_B"]).await;
+        let result = client
+            .schema
+            .remove_tenants(&class.class, &vec!["TENANT_A", "TENANT_B"])
+            .await;
         assert_eq!(200, result.as_ref().unwrap().status());
         let result = client.schema.list_tenants(&class.class).await;
         //assert_eq!(200, result.as_ref().unwrap().status());
