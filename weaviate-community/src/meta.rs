@@ -1,13 +1,13 @@
 use reqwest::Url;
 use std::error::Error;
 
-pub struct Meta {
-    endpoint: Url,
+pub struct _Meta {
+    _endpoint: Url,
 }
 
-impl Meta {
+impl _Meta {
     pub fn new(url: &Url) -> Result<Self, Box<dyn Error>> {
-        let endpoint = url.join("/v1/meta")?;
-        Ok(Meta { endpoint })
+        let _endpoint = url.join("/v1/meta")?;
+        Ok(_Meta { _endpoint })
     }
 }

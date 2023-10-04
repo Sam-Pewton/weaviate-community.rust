@@ -1,13 +1,13 @@
 use reqwest::Url;
 use std::error::Error;
 
-pub struct Classification {
-    endpoint: Url,
+pub struct _Classification {
+    _endpoint: Url,
 }
 
-impl Classification {
+impl _Classification {
     pub fn new(url: &Url) -> Result<Self, Box<dyn Error>> {
-        let endpoint = url.join("/v1/classification")?;
-        Ok(Classification { endpoint })
+        let _endpoint = url.join("/v1/classification")?;
+        Ok(_Classification { _endpoint })
     }
 }
