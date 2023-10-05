@@ -19,7 +19,7 @@ pub use self::collections::Class;
 pub use self::meta::_Meta;
 pub use self::modules::_Modules;
 pub use self::nodes::_Nodes;
-pub use self::objects::_Objects;
+pub use self::objects::Objects;
 pub use self::oidc::_OIDC;
 pub use self::schema::Schema;
 
@@ -29,7 +29,7 @@ use std::error::Error;
 pub struct Client {
     pub base_url: Url,
     pub schema: Schema,
-    pub objects: _Objects,
+    pub objects: Objects,
     pub batch: _Batch,
     pub backups: _Backups,
     pub classification: _Classification,
@@ -43,7 +43,7 @@ impl Client {
     pub fn new(url: &str) -> Result<Self, Box<dyn Error>> {
         let base = Url::parse(url)?;
         let schema = Schema::new(&base)?;
-        let objects = _Objects::new(&base)?;
+        let objects = Objects::new(&base)?;
         let batch = _Batch::new(&base)?;
         let backups = _Backups::new(&base)?;
         let classification = _Classification::new(&base)?;
