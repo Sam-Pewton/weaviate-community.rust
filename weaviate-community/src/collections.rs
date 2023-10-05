@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 ///
-///
+/// Belong to schema
 ///
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -38,7 +38,7 @@ fn default_vector_index_type() -> Option<String> {
 }
 
 ///
-///
+/// Belongs to schema
 ///
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -63,14 +63,14 @@ pub struct Property {
 }
 
 ///
-///
+/// Belongs to schema
 ///
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ShardingConfig {}
 
 ///
-///
+/// Belongs to schema
 ///
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MultiTenancyConfig {
@@ -78,7 +78,7 @@ pub struct MultiTenancyConfig {
 }
 
 ///
-///
+/// Belongs to schema
 ///
 pub enum ShardStatus {
     READONLY,
@@ -95,7 +95,7 @@ impl ShardStatus {
 }
 
 ///
-///
+/// Belongs to schema
 ///
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Tenant {
@@ -109,7 +109,7 @@ fn default_activity_status() -> Option<ActivityStatus> {
 }
 
 ///
-///
+/// Belongs to schema
 ///
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ActivityStatus {
@@ -127,7 +127,7 @@ impl ActivityStatus {
 }
 
 ///
-///
+/// Belongs to schema
 ///
 pub enum ConsistencyLevel {
     ONE,
@@ -146,7 +146,7 @@ impl ConsistencyLevel {
 }
 
 ///
-///
+/// Belongs to objects
 ///
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Object {
@@ -162,3 +162,39 @@ pub struct Object {
     #[serde(default)]
     pub tenant: Option<String>,
 }
+
+///
+/// Belongs to Objects
+///
+pub enum OrderBy {
+    ASC,
+    DESC,
+}
+
+impl OrderBy {
+    pub fn value(&self) -> &str {
+        match self {
+            OrderBy::ASC => "asc",
+            OrderBy::DESC => "desc",
+        }
+    }
+}
+
+///
+/// Belongs to Objects
+///
+#[derive(Debug)]
+pub struct QueryError(pub String);
+impl std::error::Error for QueryError {}
+
+impl std::fmt::Display for QueryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Invalid query parameters passed: {}", self.0)
+    }
+}
+
+//impl std::fmt::Debug for QueryError {
+//    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//        write!(f, "Invalid query parameters passed: {}", self.message)
+//    }
+//}
