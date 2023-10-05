@@ -1,9 +1,10 @@
-use crate::collections::{ConsistencyLevel, Object};
+use crate::collections::{ConsistencyLevel, Object, OrderBy, QueryError};
 use reqwest::Url;
 use std::error::Error;
+use uuid::Uuid;
 
-/// All schema related endpoints and functionality described in
-/// [Weaviate schema API documentation](https://weaviate.io/developers/weaviate/api/rest/objects)
+/// All objects endpoints and functionality described in
+/// [Weaviate objects API documentation](https://weaviate.io/developers/weaviate/api/rest/objects)
 ///
 pub struct Objects {
     endpoint: Url,
@@ -12,7 +13,7 @@ pub struct Objects {
 
 impl Objects {
     pub fn new(url: &Url) -> Result<Self, Box<dyn Error>> {
-        let endpoint = url.join("/v1/objects")?;
+        let endpoint = url.join("/v1/objects/")?;
         Ok(Objects {
             endpoint,
             client: reqwest::Client::new(),
@@ -20,19 +21,79 @@ impl Objects {
     }
 
     ///
-    ///
+    /// class
+    /// limit
+    /// offset -> cannot be used with after, should be used in conjunction with limit
+    /// after -> MUST be used with class, cannot be used with offset or sort, should be used with
+    ///          limit
+    /// include -> has a list of allowed values, including classification, vector,
+    ///            featureProjection, and other module-specific additional properties
+    /// sort -> can be a comma separated list of strings (corresponding to properties)
+    /// order -> `asc` or `desc` should be used with sort
     ///
     pub async fn list(
         &self,
-        _class_name: Option<&str>,
-        _limit: Option<u64>,
-        _offset: Option<u64>,
-        _after: Option<&str>,
-        _include: Option<&str>,
-        _sort: Option<&str>,
-        _order: Option<&str>,
+        class_name: Option<&str>,
+        limit: Option<u64>,
+        offset: Option<u64>,
+        after: Option<&str>,
+        include: Option<&str>,
+        sort: Option<Vec<&str>>,
+        order: Option<OrderBy>,
     ) -> Result<reqwest::Response, Box<dyn Error>> {
-        let res = self.client.get(self.endpoint.clone()).send().await?;
+        let mut endpoint = self.endpoint.clone();
+        if let Some(c) = class_name {
+            endpoint.query_pairs_mut().append_pair("class", c);
+        }
+        if let Some(l) = limit {
+            endpoint
+                .query_pairs_mut()
+                .append_pair("limit", &l.to_string());
+        }
+        if let Some(o) = offset {
+            endpoint
+                .query_pairs_mut()
+                .append_pair("offset", &o.to_string());
+            // Raise an err if after is some
+            if after.is_some() {
+                return Err(Box::new(QueryError(
+                    "'after' must be None when 'offset' is Some".into(),
+                )));
+            }
+            // warn if limit is none
+        }
+        if let Some(a) = after {
+            endpoint.query_pairs_mut().append_pair("after", a);
+            // raise err if class is none
+            if after.is_none() {
+                return Err(Box::new(QueryError(
+                    "'class' must be Some when 'after' is Some".into(),
+                )));
+            }
+            // raise an error if offset or sort are some
+            if offset.is_some() {
+                return Err(Box::new(QueryError(
+                    "'offset' must be None when 'after' is Some".into(),
+                )));
+            }
+            if sort.is_some() {
+                return Err(Box::new(QueryError(
+                    "'sort' must be None when 'after' is Some".into(),
+                )));
+            }
+            // warn if limit is none
+        }
+        if let Some(i) = include {
+            endpoint.query_pairs_mut().append_pair("include", i);
+        }
+        if let Some(s) = sort {
+            let values = s.join(",");
+            endpoint.query_pairs_mut().append_pair("sort", &values);
+        }
+        if let Some(o) = order {
+            endpoint.query_pairs_mut().append_pair("order", o.value());
+        }
+        let res = self.client.get(endpoint).send().await?;
         Ok(res)
     }
 
@@ -44,72 +105,259 @@ impl Objects {
         new_object: &Object,
         consistency_level: Option<ConsistencyLevel>,
     ) -> Result<reqwest::Response, Box<dyn Error>> {
-        let c_level = match consistency_level {
-            Some(x) => {
-                let mut query = "?consistency_level=".to_string();
-                query.push_str(x.value());
-                query
-            }
-            None => "".to_string(),
-        };
-        let endpoint = self.endpoint.join(&c_level)?;
+        let mut endpoint = self.endpoint.clone();
+        if let Some(x) = consistency_level {
+            endpoint
+                .query_pairs_mut()
+                .append_pair("consistency_level", x.value());
+        }
         let payload = serde_json::to_value(&new_object)?;
         let res = self.client.post(endpoint).json(&payload).send().await?;
         Ok(res)
     }
 
-    pub async fn batch_create(&self) {
-        todo!();
+    ///
+    /// Collect an individual data object
+    ///
+    pub async fn get(
+        &self,
+        class_name: &str,
+        id: &Uuid,
+        include: Option<&str>,
+        consistency_level: Option<ConsistencyLevel>,
+        tenant_key: Option<&str>,
+    ) -> Result<reqwest::Response, Box<dyn Error>> {
+        let mut endpoint: String = class_name.into();
+        endpoint.push_str("/");
+        endpoint.push_str(&id.to_string());
+        let mut endpoint = self.endpoint.join(&endpoint)?;
+        if let Some(cl) = consistency_level {
+            endpoint
+                .query_pairs_mut()
+                .append_pair("consistency_level", &cl.value());
+        }
+        if let Some(t) = tenant_key {
+            // multi tenancy must be enabled first
+            endpoint.query_pairs_mut().append_pair("tenant", t);
+        }
+        if let Some(i) = include {
+            // multi tenancy must be enabled first
+            endpoint.query_pairs_mut().append_pair("include", i);
+        }
+
+        let res = self.client.get(endpoint).send().await?;
+        Ok(res)
     }
 
-    pub async fn get(&self) {
-        todo!();
-    }
+    pub async fn exists(
+        &self,
+        class_name: &str,
+        id: &Uuid,
+        consistency_level: Option<ConsistencyLevel>,
+        tenant_name: Option<&str>,
+    ) -> Result<reqwest::Response, Box<dyn Error>> {
+        let mut endpoint: String = class_name.into();
+        endpoint.push_str("/");
+        endpoint.push_str(&id.to_string());
+        let mut endpoint = self.endpoint.join(&endpoint)?;
+        if let Some(cl) = consistency_level {
+            endpoint
+                .query_pairs_mut()
+                .append_pair("consistency_level", &cl.value());
+        }
+        if let Some(t) = tenant_name {
+            // multi tenancy must be enabled first
+            endpoint.query_pairs_mut().append_pair("tenant", t);
+        }
 
-    pub async fn exists(&self) {
-        todo!();
+        let res = self.client.head(endpoint).send().await?;
+        Ok(res)
     }
 
     pub async fn update(&self) {
         todo!();
     }
 
-    pub async fn delete(&self) {
+    pub async fn replace(&self) {
+        todo!();
     }
 
-    pub async fn validate(&self) {
+    pub async fn delete(
+        &self,
+        class_name: &str,
+        id: &Uuid,
+        consistency_level: Option<ConsistencyLevel>,
+        tenant_name: Option<&str>,
+    ) -> Result<reqwest::Response, Box<dyn Error>> {
+        let mut endpoint: String = class_name.into();
+        endpoint.push_str("/");
+        endpoint.push_str(&id.to_string());
+        let mut endpoint = self.endpoint.join(&endpoint)?;
+        if let Some(cl) = consistency_level {
+            endpoint
+                .query_pairs_mut()
+                .append_pair("consistency_level", &cl.value());
+        }
+        if let Some(t) = tenant_name {
+            // multi tenancy must be enabled first
+            endpoint.query_pairs_mut().append_pair("tenant", t);
+        }
+
+        let res = self.client.delete(endpoint).send().await?;
+        Ok(res)
     }
 
-    // cross references?
+    ///
+    /// This method doesn't seem to work as intended. I can get a 200 response, but I can't see how
+    /// it returns True/None. All responses are an empty string..
+    ///
+    pub async fn validate(
+        &self,
+        class_name: &str,
+        properties: serde_json::Value,
+        id: &Uuid,
+    ) -> Result<reqwest::Response, Box<dyn Error>> {
+        let payload = serde_json::json!({
+            "class": class_name,
+            "id": id.to_string(),
+            "properties": properties
+        });
+        let endpoint = self.endpoint.join("validate")?;
+        println!("{:?}", payload);
+        let res = self.client.post(endpoint).json(&payload).send().await?;
+        Ok(res)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    //use crate::collections::{ConsistencyLevel, Object};
-    use crate::collections::Object;
-    //use crate::Client;
+    use std::str::FromStr;
 
-    fn _test_object() -> Object {
+    use uuid::Uuid;
+
+    use crate::collections::{ConsistencyLevel, Object};
+    //use crate::collections::Object;
+    use crate::Client;
+
+    fn test_object(class_name: &str, id: Option<Uuid>) -> Object {
         let properties = serde_json::json!({
             "name": "test"
         });
         Object {
-            class: "TestClass2".into(),
+            class: class_name.into(),
             properties,
-            id: None,
+            id,
             vector: None,
             tenant: None,
         }
     }
 
     #[tokio::test]
-    async fn test_create_object() {
-        //let client = Client::new("http://localhost:8080").unwrap();
-        //let object = test_object();
-        //let _res = client.objects.create(&object, Some(ConsistencyLevel::ALL)).await;
-        //
-        //let res = client.objects.list(None, None, None, None, None, None, None).await;
+    async fn test_list_objects() {
+        let client = Client::new("http://localhost:8080").unwrap();
+        let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303").unwrap();
+        let object = test_object("TestListObject", Some(uuid.clone()));
+        let res = client
+            .objects
+            .create(&object, Some(ConsistencyLevel::ALL))
+            .await;
+        assert_eq!(200, res.unwrap().status());
 
-        //println!("{:?}", res);
+        let res = client
+            .objects
+            .list(
+                Some("TestListObject"),
+                Some(10),
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            .await;
+        assert_eq!(
+            "TestListObject",
+            res.unwrap().json::<serde_json::Value>().await.unwrap()["objects"][0]["class"]
+        );
+
+        let res = client
+            .objects
+            .delete("TestListObject", &uuid, None, None)
+            .await;
+        assert_eq!(204, res.unwrap().status());
+    }
+
+    #[tokio::test]
+    async fn test_get_object() {
+        let client = Client::new("http://localhost:8080").unwrap();
+        let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd202").unwrap();
+        let object = test_object("TestGetObject", Some(uuid.clone()));
+        let res = client
+            .objects
+            .create(&object, Some(ConsistencyLevel::ALL))
+            .await;
+        assert_eq!(200, res.unwrap().status());
+
+        let res = client
+            .objects
+            .get("TestGetObject", &uuid, None, None, None)
+            .await;
+
+        assert_eq!(
+            "TestGetObject",
+            res.unwrap().json::<serde_json::Value>().await.unwrap()["class"]
+        );
+
+        let res = client
+            .objects
+            .delete("TestGetObject", &uuid, None, None)
+            .await;
+        assert_eq!(204, res.unwrap().status());
+    }
+
+    #[tokio::test]
+    async fn test_delete_object() {
+        let client = Client::new("http://localhost:8080").unwrap();
+        let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd967").unwrap();
+        let object = test_object("TestDeleteObject", Some(uuid.clone()));
+        let res = client
+            .objects
+            .create(&object, Some(ConsistencyLevel::ALL))
+            .await;
+        assert_eq!(200, res.unwrap().status());
+        let res = client
+            .objects
+            .delete("TestDeleteObject", &uuid, None, None)
+            .await;
+        assert_eq!(204, res.unwrap().status());
+    }
+
+    #[tokio::test]
+    async fn test_create_object() {
+        let client = Client::new("http://localhost:8080").unwrap();
+        let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd178").unwrap();
+        let object = test_object("TestCreateObject", Some(uuid.clone()));
+        let res = client
+            .objects
+            .create(&object, Some(ConsistencyLevel::ALL))
+            .await;
+        assert_eq!(200, res.unwrap().status());
+
+        //let res = client.objects.exists(
+        //    "TestClass2",
+        //    &Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd963").unwrap(),
+        //    None,
+        //    None,
+        //).await;
+
+        //let res = client.objects.validate("TestClass2", serde_json::json!({"name": "test4"}), Uuid::from_str("de22d1b8-3b95-4e94-96d5-9a2b60fbd965").unwrap()).await;
+        //println!("{:?}", res.unwrap());
+
+        //println!("{:?}", res.unwrap().json::<serde_json::Value>().await);
+        let res = client
+            .objects
+            .delete("TestCreateObject", &uuid, None, None)
+            .await;
+        assert_eq!(204, res.unwrap().status());
     }
 }

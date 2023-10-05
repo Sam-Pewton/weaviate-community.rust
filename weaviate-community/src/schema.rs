@@ -31,16 +31,22 @@ impl Schema {
     /// ```
     /// use weaviate_community::Client;
     ///
-    /// let client = Client::new("http://localhost:8080").unwrap();
-    /// let response = client.schema.get(None);
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let client = Client::new("http://localhost:8080").unwrap();
+    ///     let response = client.schema.get(None).await;
+    /// }
     /// ```
     ///
     /// GET /v1/schema/{class_name}
     /// ```
     /// use weaviate_community::Client;
     ///
-    /// let client = Client::new("http://localhost:8080").unwrap();
-    /// let response = client.schema.get(Some("Library"));
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let client = Client::new("http://localhost:8080").unwrap();
+    ///     let response = client.schema.get(Some("Library")).await;
+    /// }
     /// ```
     ///
     pub async fn get(&self, class_name: Option<&str>) -> Result<Response, Box<dyn Error>> {
@@ -64,21 +70,24 @@ impl Schema {
     /// use weaviate_community::Client;
     /// use weaviate_community::collections::Class;
     ///
-    /// let class = Class {
-    ///     class: "Library".into(),
-    ///     description: "Library Class".into(),
-    ///     properties: None,
-    ///     vector_index_type: None,
-    ///     vector_index_config: None,
-    ///     vectorizer: None,
-    ///     module_config: None,
-    ///     inverted_index_config: None,
-    ///     sharding_config: None,
-    ///     multi_tenancy_config: None,
-    /// };
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let class = Class {
+    ///         class: "Library".into(),
+    ///         description: "Library Class".into(),
+    ///         properties: None,
+    ///         vector_index_type: None,
+    ///         vector_index_config: None,
+    ///         vectorizer: None,
+    ///         module_config: None,
+    ///         inverted_index_config: None,
+    ///         sharding_config: None,
+    ///         multi_tenancy_config: None,
+    ///     };
     ///
-    /// let client = Client::new("http://localhost:8080").unwrap();
-    /// let response = client.schema.create_class(&class);
+    ///     let client = Client::new("http://localhost:8080").unwrap();
+    ///     let response = client.schema.create_class(&class).await;
+    /// }
     /// ```
     ///
     pub async fn create_class(&self, class: &Class) -> Result<reqwest::Response, Box<dyn Error>> {
@@ -99,8 +108,11 @@ impl Schema {
     /// ```
     /// use weaviate_community::Client;
     ///
-    /// let client = Client::new("http://localhost:8080").unwrap();
-    /// let response = client.schema.delete("Library");
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let client = Client::new("http://localhost:8080").unwrap();
+    ///     let response = client.schema.delete("Library").await;
+    /// }
     /// ```
     ///
     pub async fn delete(&self, class_name: &str) -> Result<reqwest::Response, Box<dyn Error>> {
@@ -237,7 +249,6 @@ impl Schema {
         endpoint.push_str("/tenants");
         let endpoint = self.endpoint.join(&endpoint)?;
         let payload = serde_json::to_value(&tenants)?;
-        println!("{:?}", &payload);
         let res = self.client.put(endpoint).json(&payload).send().await?;
         Ok(res)
     }
@@ -456,10 +467,10 @@ mod tests {
 
         let result = client.schema.list_tenants(&class.class).await;
         //assert_eq!(200, result.as_ref().unwrap().status());
-        println!(
-            "{:?}",
-            result.unwrap().json::<serde_json::Value>().await.unwrap()
-        );
+        //println!(
+        //    "{:?}",
+        //    result.unwrap().json::<serde_json::Value>().await.unwrap()
+        //);
 
         let mut tenants = test_tenants();
         let result = client.schema.add_tenants(&class.class, &tenants).await;
@@ -467,26 +478,26 @@ mod tests {
 
         let result = client.schema.list_tenants(&class.class).await;
         //assert_eq!(200, result.as_ref().unwrap().status());
-        println!(
-            "{:?}",
-            result.unwrap().json::<serde_json::Value>().await.unwrap()
-        );
+        //println!(
+        //    "{:?}",
+        //    result.unwrap().json::<serde_json::Value>().await.unwrap()
+        //);
 
         tenants[0].activity_status = Some(ActivityStatus::COLD);
         tenants[1].activity_status = Some(ActivityStatus::COLD);
         let result = client.schema.update_tenants(&class.class, &tenants).await;
         //assert_eq!(200, result.as_ref().unwrap().status());
-        println!(
-            "{:?}",
-            result.unwrap().json::<serde_json::Value>().await.unwrap()
-        );
+        //println!(
+        //    "{:?}",
+        //    result.unwrap().json::<serde_json::Value>().await.unwrap()
+        //);
 
         let result = client.schema.list_tenants(&class.class).await;
         //assert_eq!(200, result.as_ref().unwrap().status());
-        println!(
-            "{:?}",
-            result.unwrap().json::<serde_json::Value>().await.unwrap()
-        );
+        //println!(
+        //    "{:?}",
+        //    result.unwrap().json::<serde_json::Value>().await.unwrap()
+        //);
 
         let result = client
             .schema
@@ -495,10 +506,10 @@ mod tests {
         assert_eq!(200, result.as_ref().unwrap().status());
         let result = client.schema.list_tenants(&class.class).await;
         //assert_eq!(200, result.as_ref().unwrap().status());
-        println!(
-            "{:?}",
-            result.unwrap().json::<serde_json::Value>().await.unwrap()
-        );
+        //println!(
+        //    "{:?}",
+        //    result.unwrap().json::<serde_json::Value>().await.unwrap()
+        //);
 
         // Delete it and make sure that it is gone
         let result = client.schema.delete(&class.class).await;
