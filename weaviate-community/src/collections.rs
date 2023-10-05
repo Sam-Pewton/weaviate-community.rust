@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use uuid::Uuid;
 
+///
+///
+///
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Class {
@@ -33,6 +37,9 @@ fn default_vector_index_type() -> Option<String> {
     Some("hsnw".to_string())
 }
 
+///
+///
+///
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Property {
@@ -55,15 +62,24 @@ pub struct Property {
     pub index_searchable: Option<bool>,
 }
 
+///
+///
+///
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ShardingConfig {}
 
+///
+///
+///
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MultiTenancyConfig {
     pub enabled: bool,
 }
 
+///
+///
+///
 pub enum ShardStatus {
     READONLY,
     READY,
@@ -78,6 +94,9 @@ impl ShardStatus {
     }
 }
 
+///
+///
+///
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Tenant {
     pub name: String,
@@ -89,6 +108,9 @@ fn default_activity_status() -> Option<ActivityStatus> {
     Some(ActivityStatus::HOT)
 }
 
+///
+///
+///
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ActivityStatus {
     HOT,
@@ -102,4 +124,41 @@ impl ActivityStatus {
             ActivityStatus::COLD => "COLD",
         }
     }
+}
+
+///
+///
+///
+pub enum ConsistencyLevel {
+    ONE,
+    QUORUM,
+    ALL,
+}
+
+impl ConsistencyLevel {
+    pub fn value(&self) -> &str {
+        match self {
+            ConsistencyLevel::ONE => "ONE",
+            ConsistencyLevel::QUORUM => "QUORUM",
+            ConsistencyLevel::ALL => "ALL",
+        }
+    }
+}
+
+///
+///
+///
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Object {
+    pub class: String,
+    pub properties: serde_json::Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub id: Option<Uuid>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub vector: Option<Vec<f64>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub tenant: Option<String>,
 }

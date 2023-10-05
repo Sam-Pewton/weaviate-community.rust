@@ -2,7 +2,7 @@ use crate::collections::{Class, Property, ShardStatus, Tenant};
 use reqwest::{Response, Url};
 use std::error::Error;
 
-/// All schema related endpoints and functionality described in 
+/// All schema related endpoints and functionality described in
 /// [Weaviate schema API documentation](https://weaviate.io/developers/weaviate/api/rest/schema)
 ///
 pub struct Schema {
@@ -55,7 +55,7 @@ impl Schema {
     ///
     /// Create a new data object class in the schema.
     ///
-    /// Note that from 1.5.0, creating a schema is optional, as Auto Schema is available. See for 
+    /// Note that from 1.5.0, creating a schema is optional, as Auto Schema is available. See for
     /// more info:
     /// [Weaviate auto-schema documentation](https://weaviate.io/developers/weaviate/config-refs/schema#auto-schema)
     ///
