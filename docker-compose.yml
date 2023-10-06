@@ -1,5 +1,10 @@
 ---
-version: '3.4'
+version: '3.8'
+
+networks:
+  system-integration:
+    name: system-integration
+
 services:
   weaviate:
     command:
@@ -10,6 +15,7 @@ services:
     - --scheme
     - http
     image: semitechnologies/weaviate:1.20.5
+    container_name: 'weaviate'
     ports:
     - 8080:8080
     restart: on-failure:0
@@ -21,4 +27,13 @@ services:
       ENABLE_MODULES: ''
       CLUSTER_HOSTNAME: 'weaviate1'
       LOG_LEVEL: 'debug'
+    networks:
+      - system-integration
+
+  si-tests:
+    image: alpine/curl:8.1.2
+    container_name: 'si-tests'
+    command: sleep infinity
+    networks:
+      - system-integration
 ...
