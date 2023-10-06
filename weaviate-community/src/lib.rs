@@ -16,7 +16,7 @@ pub use self::backups::_Backups;
 pub use self::batch::_Batch;
 pub use self::classification::_Classification;
 pub use self::collections::Class;
-pub use self::meta::_Meta;
+pub use self::meta::Meta;
 pub use self::modules::_Modules;
 pub use self::nodes::_Nodes;
 pub use self::objects::Objects;
@@ -33,7 +33,7 @@ pub struct Client {
     pub batch: _Batch,
     pub backups: _Backups,
     pub classification: _Classification,
-    pub meta: _Meta,
+    pub meta: Meta,
     pub nodes: _Nodes,
     pub oidc: _OIDC,
     pub modules: _Modules,
@@ -47,7 +47,7 @@ impl Client {
         let batch = _Batch::new(&base)?;
         let backups = _Backups::new(&base)?;
         let classification = _Classification::new(&base)?;
-        let meta = _Meta::new(&base)?;
+        let meta = Meta::new(&base)?;
         let nodes = _Nodes::new(&base)?;
         let oidc = _OIDC::new(&base)?;
         let modules = _Modules::new(&base)?;
