@@ -1,26 +1,52 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/configuration-reference
+---
 version: 2.1
-
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/configuration-reference/#jobs
-jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Docker Hub or use one of our convenience images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/configuration-reference/#executor-job
+executors:
+  my-executor:
     docker:
-      - image: cimg/base:stable
-    # Add steps to the job
-    # See: https://circleci.com/docs/configuration-reference/#steps
+      - image: sampewton/circleci-base:latest
+    resource_class: small
+
+jobs:
+  si-test:
+    executor: my-executor
     steps:
       - checkout
+      - setup_remote_docker
       - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+          name: Start compose
+          command: |
+            set -x
+            docker-compose up -d
+      - run:
+          name: See port bindings
+          command: |
+            docker ps
+      - run:
+          name: Curl the meta endpoint
+          command: |
+            docker exec -it si-tests curl weaviate:8080/v1/meta
+      - run:
+          name: Stop Docker compose
+          command: |
+            docker-compose down
+  publish:
+    executor: my-executor
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Placeholder
+          command: |
+            echo "This will publish the latest version to crates.io and tag the repo eventually"
 
-# Orchestrate jobs using workflows
-# See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
-  say-hello-workflow:
+  version: 2
+  weaviate-community:
     jobs:
-      - say-hello
+      - si-test
+      - publish:
+          filters:
+            branches:
+              only:
+                - main
+...
