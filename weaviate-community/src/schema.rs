@@ -1,4 +1,4 @@
-use crate::collections::{Class, Property, ShardStatus, Tenant};
+use crate::collections::schema::{Class, Property, ShardStatus, Tenant};
 use reqwest::{Response, Url};
 use std::error::Error;
 
@@ -68,7 +68,7 @@ impl Schema {
     /// POST /v1/schema
     /// ```
     /// use weaviate_community::Client;
-    /// use weaviate_community::collections::Class;
+    /// use weaviate_community::collections::schema::Class;
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -83,6 +83,7 @@ impl Schema {
     ///         inverted_index_config: None,
     ///         sharding_config: None,
     ///         multi_tenancy_config: None,
+    ///         replication_config: None,
     ///     };
     ///
     ///     let client = Client::new("http://localhost:8080").unwrap();
@@ -181,7 +182,7 @@ impl Schema {
         endpoint.push_str(shard_name);
         let endpoint = self.endpoint.join(&endpoint)?;
         let payload = serde_json::json!({
-                "status": status.value()
+            "status": status
         });
         let res = self.client.put(endpoint).json(&payload).send().await?;
         Ok(res)
@@ -259,7 +260,7 @@ mod tests {
     // Tests currently require a weaviate instance to be running on localhost, as I have not yet
     // implemented anything to mock the database. In future, actual tests will run as integration
     // tests in a container as part of the CICD process.
-    use crate::collections::{
+    use crate::collections::schema::{
         ActivityStatus, Class, MultiTenancyConfig, Property, ShardStatus, Tenant,
     };
     use crate::Client;
@@ -279,6 +280,7 @@ mod tests {
             inverted_index_config: None,
             sharding_config: None,
             multi_tenancy_config: Some(MultiTenancyConfig { enabled }),
+            replication_config: None,
         }
     }
 
@@ -294,6 +296,7 @@ mod tests {
             index_searchable: None,
             module_config: None,
             tokenization: None,
+            inverted_index_config: None,
         }
     }
 
