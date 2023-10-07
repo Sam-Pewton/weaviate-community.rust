@@ -1,13 +1,72 @@
-use reqwest::Url;
+use reqwest::{Url,Response,Client};
 use std::error::Error;
 
-pub struct _Nodes {
-    _endpoint: Url,
+/// All nodes related endpoints and functionality described in
+/// [Weaviate nodes API documentation](https://weaviate.io/developers/weaviate/api/rest/nodes)
+pub struct Nodes {
+    /// The full URL to the Meta endpoint
+    endpoint: Url,
+    /// The sub-client which executes the requests - temporary
+    client: Client,
 }
 
-impl _Nodes {
+impl Nodes {
+    /// Create a new instance of the Nodes endpoint struct. Should only be done by the parent
+    /// client.
     pub fn new(url: &Url) -> Result<Self, Box<dyn Error>> {
-        let _endpoint = url.join("/v1/nodes")?;
-        Ok(_Nodes { _endpoint })
+        let endpoint = url.join("/v1/nodes/")?;
+        Ok(Nodes { endpoint, client: Client::new() })
+    }
+
+    /// Get the node status for all nodes in the Weaviate instance.
+    ///
+    /// # Return value
+    ///
+    /// * Full Response of get request, deserializable into an array of nodes containing the
+    /// following fields: 
+    /// - name
+    /// - status
+    /// - version
+    /// - gitHash
+    /// - stats
+    ///   - shardCount
+    ///   - objectCount
+    /// - shards
+    ///   - name
+    ///   - class
+    ///   - objectCount
+    ///
+    /// # Errors
+    ///
+    /// If the client is unable to execute get, an Err result is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use weaviate_community::Client;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let client = Client::new("http://localhost:8080").unwrap();
+    ///     let res = client.nodes.get_nodes_status().await;
+    ///     println!("{:#?}", res.unwrap().json::<serde_json::Value>().await);
+    /// }
+    /// ```
+    pub async fn get_nodes_status(&self) -> Result<Response, Box<dyn Error>> {
+        let res = self.client.get(self.endpoint.clone()).send().await?;
+        Ok(res)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Client;
+
+    #[tokio::test]
+    async fn test_get_nodes_status() {
+        let client = Client::new("http://localhost:8080").unwrap();
+        let res = client.nodes.get_nodes_status().await;
+        let nodes = res.unwrap().json::<serde_json::Value>().await.unwrap();
+        assert_eq!("weaviate1", nodes["nodes"][0]["name"]);
     }
 }

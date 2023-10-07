@@ -18,7 +18,7 @@ pub use self::classification::_Classification;
 pub use self::collections::Class;
 pub use self::meta::Meta;
 pub use self::modules::_Modules;
-pub use self::nodes::_Nodes;
+pub use self::nodes::Nodes;
 pub use self::objects::Objects;
 pub use self::oidc::_OIDC;
 pub use self::schema::Schema;
@@ -34,7 +34,7 @@ pub struct Client {
     pub backups: _Backups,
     pub classification: _Classification,
     pub meta: Meta,
-    pub nodes: _Nodes,
+    pub nodes: Nodes,
     pub oidc: _OIDC,
     pub modules: _Modules,
 }
@@ -48,7 +48,7 @@ impl Client {
         let backups = _Backups::new(&base)?;
         let classification = _Classification::new(&base)?;
         let meta = Meta::new(&base)?;
-        let nodes = _Nodes::new(&base)?;
+        let nodes = Nodes::new(&base)?;
         let oidc = _OIDC::new(&base)?;
         let modules = _Modules::new(&base)?;
         Ok(Client {
