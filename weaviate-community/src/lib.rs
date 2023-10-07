@@ -15,7 +15,7 @@ mod schema;
 pub use self::backups::_Backups;
 pub use self::batch::_Batch;
 pub use self::classification::_Classification;
-pub use self::collections::Class;
+pub use self::collections::schema::Class;
 pub use self::meta::Meta;
 pub use self::modules::_Modules;
 pub use self::nodes::Nodes;

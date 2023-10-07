@@ -1,4 +1,4 @@
-use crate::collections::{ConsistencyLevel, Object, OrderBy, QueryError};
+use crate::collections::objects::{ConsistencyLevel, Object, OrderBy, QueryError};
 use reqwest::Url;
 use std::error::Error;
 use uuid::Uuid;
@@ -273,9 +273,8 @@ mod tests {
 
     use uuid::Uuid;
 
-    use crate::collections::{ConsistencyLevel, Object};
-    //use crate::collections::Object;
     use crate::Client;
+    use crate::collections::objects::{Object, ConsistencyLevel};
 
     fn test_object(class_name: &str, id: Option<Uuid>) -> Object {
         let properties = serde_json::json!({
