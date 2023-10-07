@@ -45,6 +45,8 @@ workflows:
     jobs:
       - si-test
       - publish:
+          requires:
+            - si-test
           filters:
             branches:
               only:
