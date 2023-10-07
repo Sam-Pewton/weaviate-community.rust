@@ -83,6 +83,7 @@ impl Schema {
     ///         inverted_index_config: None,
     ///         sharding_config: None,
     ///         multi_tenancy_config: None,
+    ///         replication_config: None,
     ///     };
     ///
     ///     let client = Client::new("http://localhost:8080").unwrap();
@@ -279,6 +280,7 @@ mod tests {
             inverted_index_config: None,
             sharding_config: None,
             multi_tenancy_config: Some(MultiTenancyConfig { enabled }),
+            replication_config: None,
         }
     }
 
@@ -294,6 +296,7 @@ mod tests {
             index_searchable: None,
             module_config: None,
             tokenization: None,
+            inverted_index_config: None,
         }
     }
 
