@@ -174,12 +174,50 @@ impl Objects {
         Ok(res)
     }
 
-    pub async fn update(&self) {
-        todo!();
+    /// 
+    /// Updates property values of the data object
+    /// 
+    pub async fn update(
+        &self,
+        properties: serde_json::Value,
+        class_name: &str,
+        id: &Uuid,
+        consistency_level: Option<ConsistencyLevel>
+    ) -> Result<reqwest::Response, Box<dyn Error>> {
+        let mut endpoint: String = class_name.into();
+        endpoint.push_str("/");
+        endpoint.push_str(&id.to_string());
+        let mut endpoint = self.endpoint.join(&endpoint)?;
+        if let Some(cl) = consistency_level {
+            endpoint
+                .query_pairs_mut()
+                .append_pair("consistency_level", &cl.value());
+        }
+        let res = self.client.patch(endpoint).json(&properties).send().await?;
+        Ok(res)
     }
 
-    pub async fn replace(&self) {
-        todo!();
+    /// 
+    /// Replaces all property values of the data object
+    /// 
+    pub async fn replace(
+        &self,
+        properties: serde_json::Value,
+        class_name: &str,
+        id: &Uuid,
+        consistency_level: Option<ConsistencyLevel>
+    ) -> Result<reqwest::Response, Box<dyn Error>> {
+        let mut endpoint: String = class_name.into();
+        endpoint.push_str("/");
+        endpoint.push_str(&id.to_string());
+        let mut endpoint = self.endpoint.join(&endpoint)?;
+        if let Some(cl) = consistency_level {
+            endpoint
+                .query_pairs_mut()
+                .append_pair("consistency_level", &cl.value());
+        }
+        let res = self.client.put(endpoint).json(&properties).send().await?;
+        Ok(res)
     }
 
     pub async fn delete(
@@ -241,7 +279,8 @@ mod tests {
 
     fn test_object(class_name: &str, id: Option<Uuid>) -> Object {
         let properties = serde_json::json!({
-            "name": "test"
+            "name": "test",
+            "number": 123,
         });
         Object {
             class: class_name.into(),
@@ -333,6 +372,43 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_exists_object() {
+        let client = Client::new("http://localhost:8080").unwrap();
+        let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd555").unwrap();
+        let object = test_object("TestExistsObject", Some(uuid.clone()));
+        let res = client
+            .objects
+            .create(&object, Some(ConsistencyLevel::ALL))
+            .await;
+        assert_eq!(200, res.unwrap().status());
+
+        // exists
+        let res = client.objects.exists(
+            "TestExistsObject",
+            &Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd555").unwrap(),
+            None,
+            None,
+        ).await;
+        assert_eq!(204, res.unwrap().status());
+
+        // doesnt
+        let res = client.objects.exists(
+            "TestExistsObject",
+            &Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd556").unwrap(),
+            None,
+            None,
+        ).await;
+        assert_eq!(404, res.unwrap().status());
+
+        // Delete it
+        let res = client
+            .objects
+            .delete("TestExistsObject", &uuid, None, None)
+            .await;
+        assert_eq!(204, res.unwrap().status());
+    }
+
+    #[tokio::test]
     async fn test_create_object() {
         let client = Client::new("http://localhost:8080").unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd178").unwrap();
@@ -343,13 +419,6 @@ mod tests {
             .await;
         assert_eq!(200, res.unwrap().status());
 
-        //let res = client.objects.exists(
-        //    "TestClass2",
-        //    &Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd963").unwrap(),
-        //    None,
-        //    None,
-        //).await;
-
         //let res = client.objects.validate("TestClass2", serde_json::json!({"name": "test4"}), Uuid::from_str("de22d1b8-3b95-4e94-96d5-9a2b60fbd965").unwrap()).await;
         //println!("{:?}", res.unwrap());
 
@@ -357,6 +426,94 @@ mod tests {
         let res = client
             .objects
             .delete("TestCreateObject", &uuid, None, None)
+            .await;
+        assert_eq!(204, res.unwrap().status());
+    }
+
+    #[tokio::test]
+    async fn test_replace_object() {
+        let client = Client::new("http://localhost:8080").unwrap();
+        let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd666").unwrap();
+        let object = test_object("TestReplaceObject", Some(uuid.clone()));
+        let res = client
+            .objects
+            .create(&object, Some(ConsistencyLevel::ALL))
+            .await;
+        assert_eq!(200, res.unwrap().status());
+
+        let test = serde_json::json!({
+            "class": "TestReplaceObject",
+            "id": uuid.clone(),
+            "properties": {
+                "name": "updated",
+                "number": 987
+            }
+        });
+        // note that if you drop a field, it will be dropped in the actual object too
+        let res = client.objects.replace(
+            test,
+            &object.class,
+            &uuid.clone(),
+            Some(ConsistencyLevel::ALL)
+        ).await;
+        assert_eq!(200, res.unwrap().status());
+
+        let res = client.objects.replace(
+            serde_json::json!({}),
+            &object.class,
+            &uuid.clone(),
+            Some(ConsistencyLevel::ALL)
+        ).await;
+        assert_eq!(422, res.unwrap().status());
+
+        // Delete the object
+        let res = client
+            .objects
+            .delete("TestReplaceObject", &uuid, None, None)
+            .await;
+        assert_eq!(204, res.unwrap().status());
+    }
+
+    #[tokio::test]
+    async fn test_update_object() {
+        let client = Client::new("http://localhost:8080").unwrap();
+        let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd444").unwrap();
+        let object = test_object("TestUpdateObject", Some(uuid.clone()));
+        let res = client
+            .objects
+            .create(&object, Some(ConsistencyLevel::ALL))
+            .await;
+        assert_eq!(200, res.unwrap().status());
+
+        // Updates
+        let test = serde_json::json!({
+            "class": "TestUpdateObject",
+            "id": uuid.clone(),
+            "properties": {
+                "name": "updated",
+            }
+        });
+        let res = client.objects.update(
+            test,
+            &object.class,
+            &uuid.clone(),
+            Some(ConsistencyLevel::ALL)
+        ).await;
+        assert_eq!(204, res.unwrap().status());
+
+        // Doesn't
+        let res = client.objects.update(
+            serde_json::json!({}),
+            "test",
+            &uuid.clone(),
+            Some(ConsistencyLevel::ALL)
+        ).await;
+        assert_eq!(404, res.unwrap().status());
+
+        // Delete the object
+        let res = client
+            .objects
+            .delete("TestUpdateObject", &uuid, None, None)
             .await;
         assert_eq!(204, res.unwrap().status());
     }
