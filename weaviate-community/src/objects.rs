@@ -1,5 +1,5 @@
-use crate::collections::objects::{ConsistencyLevel, Object, OrderBy};
 use crate::collections::error::QueryError;
+use crate::collections::objects::{ConsistencyLevel, Object, OrderBy};
 use reqwest::Url;
 use std::{error::Error, sync::Arc};
 use uuid::Uuid;
@@ -172,15 +172,15 @@ impl Objects {
         Ok(res)
     }
 
-    /// 
+    ///
     /// Updates property values of the data object
-    /// 
+    ///
     pub async fn update(
         &self,
         properties: serde_json::Value,
         class_name: &str,
         id: &Uuid,
-        consistency_level: Option<ConsistencyLevel>
+        consistency_level: Option<ConsistencyLevel>,
     ) -> Result<reqwest::Response, Box<dyn Error>> {
         let mut endpoint: String = class_name.into();
         endpoint.push_str("/");
@@ -195,15 +195,15 @@ impl Objects {
         Ok(res)
     }
 
-    /// 
+    ///
     /// Replaces all property values of the data object
-    /// 
+    ///
     pub async fn replace(
         &self,
         properties: serde_json::Value,
         class_name: &str,
         id: &Uuid,
-        consistency_level: Option<ConsistencyLevel>
+        consistency_level: Option<ConsistencyLevel>,
     ) -> Result<reqwest::Response, Box<dyn Error>> {
         let mut endpoint: String = class_name.into();
         endpoint.push_str("/");
@@ -271,8 +271,8 @@ mod tests {
 
     use uuid::Uuid;
 
-    use crate::Client;
-    use crate::collections::objects::{Object, ConsistencyLevel};
+    use crate::collections::objects::{ConsistencyLevel, Object};
+    use crate::WeaviateClient;
 
     fn test_object(class_name: &str, id: Option<Uuid>) -> Object {
         let properties = serde_json::json!({
@@ -293,7 +293,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_objects() {
-        let client = Client::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303").unwrap();
         let object = test_object("TestListObject", Some(uuid.clone()));
         let res = client
@@ -328,7 +328,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_object() {
-        let client = Client::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd202").unwrap();
         let object = test_object("TestGetObject", Some(uuid.clone()));
         let res = client
@@ -356,7 +356,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_object() {
-        let client = Client::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd967").unwrap();
         let object = test_object("TestDeleteObject", Some(uuid.clone()));
         let res = client
@@ -373,7 +373,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_exists_object() {
-        let client = Client::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd555").unwrap();
         let object = test_object("TestExistsObject", Some(uuid.clone()));
         let res = client
@@ -383,21 +383,27 @@ mod tests {
         assert_eq!(200, res.unwrap().status());
 
         // exists
-        let res = client.objects.exists(
-            "TestExistsObject",
-            &Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd555").unwrap(),
-            None,
-            None,
-        ).await;
+        let res = client
+            .objects
+            .exists(
+                "TestExistsObject",
+                &Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd555").unwrap(),
+                None,
+                None,
+            )
+            .await;
         assert_eq!(204, res.unwrap().status());
 
         // doesnt
-        let res = client.objects.exists(
-            "TestExistsObject",
-            &Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd556").unwrap(),
-            None,
-            None,
-        ).await;
+        let res = client
+            .objects
+            .exists(
+                "TestExistsObject",
+                &Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd556").unwrap(),
+                None,
+                None,
+            )
+            .await;
         assert_eq!(404, res.unwrap().status());
 
         // Delete it
@@ -410,7 +416,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_object() {
-        let client = Client::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd178").unwrap();
         let object = test_object("TestCreateObject", Some(uuid.clone()));
         let res = client
@@ -432,7 +438,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_replace_object() {
-        let client = Client::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd666").unwrap();
         let object = test_object("TestReplaceObject", Some(uuid.clone()));
         let res = client
@@ -450,20 +456,26 @@ mod tests {
             }
         });
         // note that if you drop a field, it will be dropped in the actual object too
-        let res = client.objects.replace(
-            test,
-            &object.class,
-            &uuid.clone(),
-            Some(ConsistencyLevel::ALL)
-        ).await;
+        let res = client
+            .objects
+            .replace(
+                test,
+                &object.class,
+                &uuid.clone(),
+                Some(ConsistencyLevel::ALL),
+            )
+            .await;
         assert_eq!(200, res.unwrap().status());
 
-        let res = client.objects.replace(
-            serde_json::json!({}),
-            &object.class,
-            &uuid.clone(),
-            Some(ConsistencyLevel::ALL)
-        ).await;
+        let res = client
+            .objects
+            .replace(
+                serde_json::json!({}),
+                &object.class,
+                &uuid.clone(),
+                Some(ConsistencyLevel::ALL),
+            )
+            .await;
         assert_eq!(422, res.unwrap().status());
 
         // Delete the object
@@ -476,7 +488,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_object() {
-        let client = Client::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd444").unwrap();
         let object = test_object("TestUpdateObject", Some(uuid.clone()));
         let res = client
@@ -493,21 +505,27 @@ mod tests {
                 "name": "updated",
             }
         });
-        let res = client.objects.update(
-            test,
-            &object.class,
-            &uuid.clone(),
-            Some(ConsistencyLevel::ALL)
-        ).await;
+        let res = client
+            .objects
+            .update(
+                test,
+                &object.class,
+                &uuid.clone(),
+                Some(ConsistencyLevel::ALL),
+            )
+            .await;
         assert_eq!(204, res.unwrap().status());
 
         // Doesn't
-        let res = client.objects.update(
-            serde_json::json!({}),
-            "test",
-            &uuid.clone(),
-            Some(ConsistencyLevel::ALL)
-        ).await;
+        let res = client
+            .objects
+            .update(
+                serde_json::json!({}),
+                "test",
+                &uuid.clone(),
+                Some(ConsistencyLevel::ALL),
+            )
+            .await;
         assert_eq!(404, res.unwrap().status());
 
         // Delete the object

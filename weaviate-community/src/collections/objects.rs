@@ -1,3 +1,4 @@
+/// All objects associated type components
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -24,7 +25,7 @@ use uuid::Uuid;
 ///     Object,
 ///     ConsistencyLevel,
 /// };
-/// use weaviate_community::Client;
+/// use weaviate_community::WeaviateClient;
 ///
 /// #[tokio::main]
 /// async fn main() {
@@ -41,7 +42,7 @@ use uuid::Uuid;
 ///     };
 ///
 ///     // Insert the new object into the database
-///     let client = Client::new("http://localhost:8080").unwrap();
+///     let client = WeaviateClient::new("http://localhost:8080").unwrap();
 ///     let res = client.objects.create(&new_class, Some(ConsistencyLevel::ALL)).await;
 /// }
 /// ```
