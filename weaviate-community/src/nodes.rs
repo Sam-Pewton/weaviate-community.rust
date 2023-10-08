@@ -1,4 +1,4 @@
-use reqwest::{Url,Response};
+use reqwest::{Response, Url};
 use std::error::Error;
 use std::sync::Arc;
 
@@ -24,7 +24,7 @@ impl Nodes {
     /// # Return value
     ///
     /// * Full Response of get request, deserializable into an array of nodes containing the
-    /// following fields: 
+    /// following fields:
     /// - name
     /// - status
     /// - version
@@ -44,11 +44,11 @@ impl Nodes {
     /// # Examples
     ///
     /// ```
-    /// use weaviate_community::Client;
+    /// use weaviate_community::WeaviateClient;
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new("http://localhost:8080").unwrap();
+    ///     let client = WeaviateClient::new("http://localhost:8080").unwrap();
     ///     let res = client.nodes.get_nodes_status().await;
     ///     println!("{:#?}", res.unwrap().json::<serde_json::Value>().await);
     /// }
@@ -61,11 +61,11 @@ impl Nodes {
 
 #[cfg(test)]
 mod tests {
-    use crate::Client;
+    use crate::WeaviateClient;
 
     #[tokio::test]
     async fn test_get_nodes_status() {
-        let client = Client::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let res = client.nodes.get_nodes_status().await;
         let nodes = res.unwrap().json::<serde_json::Value>().await.unwrap();
         assert_eq!("weaviate1", nodes["nodes"][0]["name"]);

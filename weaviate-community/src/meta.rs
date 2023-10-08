@@ -1,4 +1,4 @@
-use reqwest::{Url, Response};
+use reqwest::{Response, Url};
 use std::error::Error;
 use std::sync::Arc;
 
@@ -32,11 +32,11 @@ impl Meta {
     /// # Examples
     ///
     /// ```
-    /// use weaviate_community::Client;
+    /// use weaviate_community::WeaviateClient;
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new("http://localhost:8080").unwrap();
+    ///     let client = WeaviateClient::new("http://localhost:8080").unwrap();
     ///     let res = client.meta.get_meta().await;
     ///     println!("{:#?}", res.unwrap().json::<serde_json::Value>().await);
     /// }
@@ -49,13 +49,16 @@ impl Meta {
 
 #[cfg(test)]
 mod tests {
-    use crate::Client;
+    use crate::WeaviateClient;
 
     /// Test the get_meta endpoint
     #[tokio::test]
     async fn test_get_meta() {
-        let client = Client::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let res = client.meta.get_meta().await;
-        assert_eq!("http://[::]:8080", res.unwrap().json::<serde_json::Value>().await.unwrap()["hostname"]);
+        assert_eq!(
+            "http://[::]:8080",
+            res.unwrap().json::<serde_json::Value>().await.unwrap()["hostname"]
+        );
     }
 }
