@@ -1,5 +1,5 @@
 /// All OIDC associated type components
-use serde::{Serialize,Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// The expected response format when received from /v1/.well-known/openid-configuration
 /// successfully.

@@ -14,7 +14,7 @@ mod oidc;
 mod schema;
 mod utils;
 pub use self::backups::_Backups;
-pub use self::batch::_Batch;
+pub use self::batch::Batch;
 pub use self::classification::_Classification;
 pub use self::meta::Meta;
 pub use self::modules::_Modules;
@@ -32,7 +32,7 @@ pub struct WeaviateClient {
     client: Arc<reqwest::Client>,
     pub schema: Schema,
     pub objects: Objects,
-    pub batch: _Batch,
+    pub batch: Batch,
     pub backups: _Backups,
     pub classification: _Classification,
     pub meta: Meta,
@@ -47,7 +47,7 @@ impl WeaviateClient {
         let client = Arc::new(reqwest::Client::new());
         let schema = Schema::new(&base, Arc::clone(&client))?;
         let objects = Objects::new(&base, Arc::clone(&client))?;
-        let batch = _Batch::new(&base, Arc::clone(&client))?;
+        let batch = Batch::new(&base, Arc::clone(&client))?;
         let backups = _Backups::new(&base, Arc::clone(&client))?;
         let classification = _Classification::new(&base, Arc::clone(&client))?;
         let meta = Meta::new(&base, Arc::clone(&client))?;
@@ -88,7 +88,7 @@ impl WeaviateClient {
         let resp = self.client.get(endpoint).send().await?;
         match resp.status() {
             reqwest::StatusCode::OK => Ok(true),
-            _ => Ok(false)
+            _ => Ok(false),
         }
     }
 
@@ -113,7 +113,7 @@ impl WeaviateClient {
         let resp = self.client.get(endpoint).send().await?;
         match resp.status() {
             reqwest::StatusCode::OK => Ok(true),
-            _ => Ok(false)
+            _ => Ok(false),
         }
     }
 }

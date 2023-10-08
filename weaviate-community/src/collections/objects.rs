@@ -16,11 +16,12 @@ use uuid::Uuid;
 /// * last_update_time_unix: the timestamp of which the object was last updated. This should be set
 ///       to None when constructing a new object.
 /// * vector_weights: TODO
+/// * used as a response
 ///
 /// # Examples
 ///
 /// Constructing a new object
-/// ```
+/// ```no_run
 /// use weaviate_community::collections::objects::{
 ///     Object,
 ///     ConsistencyLevel,
@@ -75,6 +76,12 @@ pub struct Object {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub vector_weights: Option<u64>,
+}
+
+/// Wrapper for multiple objects.
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Objects {
+    pub objects: Vec<Object>,
 }
 
 /// Strict definitions for ordering queries.
