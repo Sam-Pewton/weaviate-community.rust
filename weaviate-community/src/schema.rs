@@ -1,4 +1,5 @@
 use crate::collections::schema::{Class, Property, ShardStatus, Tenant};
+use std::sync::Arc;
 use reqwest::{Response, Url};
 use std::error::Error;
 
@@ -7,20 +8,17 @@ use std::error::Error;
 ///
 pub struct Schema {
     endpoint: Url,
-    client: reqwest::Client,
+    client: Arc<reqwest::Client>,
 }
 
 impl Schema {
     ///
     /// Create a new Schema object. The schema object is intended to like inside the WeaviateClient
-    /// and be called through the WeaviateClient, but can be created independently too.
+    /// and be called through the WeaviateClient.
     ///
-    pub fn new(url: &Url) -> Result<Self, Box<dyn Error>> {
+    pub(super) fn new(url: &Url, client: Arc<reqwest::Client>) -> Result<Self, Box<dyn Error>> {
         let endpoint = url.join("/v1/schema/")?;
-        Ok(Schema {
-            endpoint,
-            client: reqwest::Client::new(),
-        })
+        Ok(Schema { endpoint, client })
     }
 
     ///
@@ -55,6 +53,8 @@ impl Schema {
             None => self.endpoint.clone(),
         };
         let resp = self.client.get(endpoint).send().await?;
+
+        //let test: Schema = resp.
         Ok(resp)
     }
 
@@ -261,7 +261,7 @@ mod tests {
     // implemented anything to mock the database. In future, actual tests will run as integration
     // tests in a container as part of the CICD process.
     use crate::collections::schema::{
-        ActivityStatus, Class, MultiTenancyConfig, Property, ShardStatus, Tenant,
+        ActivityStatus, Class, MultiTenancyConfig, Property, ShardStatus, Tenant, InvertedIndexConfig,
     };
     use crate::Client;
 
@@ -323,10 +323,17 @@ mod tests {
         let client = Client::new("http://localhost:8080").unwrap();
         let _ = client.schema.create_class(&class).await;
         let result = client.schema.get(Some(&class.class)).await;
-        assert_eq!(
-            class.class,
-            result.unwrap().json::<serde_json::Value>().await.unwrap()["class"]
-        );
+        let test = result.unwrap().json::<serde_json::Value>().await.unwrap();
+        let test2: Class = serde_json::from_value(test.clone()).unwrap();
+        println!("{:#?}", std::mem::size_of_val(&test2));
+
+
+
+
+        //assert_eq!(
+        //    class.class,
+        //    result.unwrap().json::<serde_json::Value>().await.unwrap()["class"]
+        //);
 
         // Delete it to tidy up after ourselves
         let result = client.schema.delete(&class.class).await;
@@ -469,38 +476,22 @@ mod tests {
         assert_eq!(200, result.as_ref().unwrap().status());
 
         let result = client.schema.list_tenants(&class.class).await;
-        //assert_eq!(200, result.as_ref().unwrap().status());
-        //println!(
-        //    "{:?}",
-        //    result.unwrap().json::<serde_json::Value>().await.unwrap()
-        //);
+        assert_eq!(200, result.as_ref().unwrap().status());
 
         let mut tenants = test_tenants();
         let result = client.schema.add_tenants(&class.class, &tenants).await;
         assert_eq!(200, result.as_ref().unwrap().status());
 
         let result = client.schema.list_tenants(&class.class).await;
-        //assert_eq!(200, result.as_ref().unwrap().status());
-        //println!(
-        //    "{:?}",
-        //    result.unwrap().json::<serde_json::Value>().await.unwrap()
-        //);
+        assert_eq!(200, result.as_ref().unwrap().status());
 
         tenants[0].activity_status = Some(ActivityStatus::COLD);
-        tenants[1].activity_status = Some(ActivityStatus::COLD);
+        tenants[1].activity_status = Some(ActivityStatus::HOT);
         let result = client.schema.update_tenants(&class.class, &tenants).await;
-        //assert_eq!(200, result.as_ref().unwrap().status());
-        //println!(
-        //    "{:?}",
-        //    result.unwrap().json::<serde_json::Value>().await.unwrap()
-        //);
+        assert_eq!(200, result.as_ref().unwrap().status());
 
         let result = client.schema.list_tenants(&class.class).await;
-        //assert_eq!(200, result.as_ref().unwrap().status());
-        //println!(
-        //    "{:?}",
-        //    result.unwrap().json::<serde_json::Value>().await.unwrap()
-        //);
+        assert_eq!(200, result.as_ref().unwrap().status());
 
         let result = client
             .schema
@@ -508,11 +499,7 @@ mod tests {
             .await;
         assert_eq!(200, result.as_ref().unwrap().status());
         let result = client.schema.list_tenants(&class.class).await;
-        //assert_eq!(200, result.as_ref().unwrap().status());
-        //println!(
-        //    "{:?}",
-        //    result.unwrap().json::<serde_json::Value>().await.unwrap()
-        //);
+        assert_eq!(200, result.as_ref().unwrap().status());
 
         // Delete it and make sure that it is gone
         let result = client.schema.delete(&class.class).await;

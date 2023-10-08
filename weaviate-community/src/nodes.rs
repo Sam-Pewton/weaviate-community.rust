@@ -1,5 +1,6 @@
-use reqwest::{Url,Response,Client};
+use reqwest::{Url,Response};
 use std::error::Error;
+use std::sync::Arc;
 
 /// All nodes related endpoints and functionality described in
 /// [Weaviate nodes API documentation](https://weaviate.io/developers/weaviate/api/rest/nodes)
@@ -7,15 +8,15 @@ pub struct Nodes {
     /// The full URL to the Meta endpoint
     endpoint: Url,
     /// The sub-client which executes the requests - temporary
-    client: Client,
+    client: Arc<reqwest::Client>,
 }
 
 impl Nodes {
     /// Create a new instance of the Nodes endpoint struct. Should only be done by the parent
     /// client.
-    pub fn new(url: &Url) -> Result<Self, Box<dyn Error>> {
+    pub(super) fn new(url: &Url, client: Arc<reqwest::Client>) -> Result<Self, Box<dyn Error>> {
         let endpoint = url.join("/v1/nodes/")?;
-        Ok(Nodes { endpoint, client: Client::new() })
+        Ok(Nodes { endpoint, client })
     }
 
     /// Get the node status for all nodes in the Weaviate instance.

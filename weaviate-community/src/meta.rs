@@ -1,5 +1,6 @@
-use reqwest::{Url, Response, Client};
+use reqwest::{Url, Response};
 use std::error::Error;
+use std::sync::Arc;
 
 /// All meta related endpoints and functionality described in
 /// [Weaviate meta API documentation](https://weaviate.io/developers/weaviate/api/rest/meta)
@@ -7,15 +8,14 @@ pub struct Meta {
     /// The full URL to the Meta endpoint
     endpoint: Url,
     /// The sub-client which executes the requests - temporary
-    client: Client,
+    client: Arc<reqwest::Client>,
 }
 
 impl Meta {
     /// Create a new instance of the Meta endpoint struct. Should only be done by the parent
     /// client.
-    pub fn new(url: &Url) -> Result<Self, Box<dyn Error>> {
+    pub(super) fn new(url: &Url, client: Arc<reqwest::Client>) -> Result<Self, Box<dyn Error>> {
         let endpoint = url.join("/v1/meta/")?;
-        let client = Client::new();
         Ok(Meta { endpoint, client })
     }
 
