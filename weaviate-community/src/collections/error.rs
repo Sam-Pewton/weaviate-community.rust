@@ -28,6 +28,6 @@ impl Error for NotConfiguredError {}
 
 impl Display for NotConfiguredError {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "Invalid query parameters passed: {}", self.0)
+        write!(f, "NotConfiguredError: {}", self.0)
     }
 }
