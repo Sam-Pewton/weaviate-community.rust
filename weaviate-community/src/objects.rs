@@ -1,6 +1,7 @@
-use crate::collections::objects::{ConsistencyLevel, Object, OrderBy, QueryError};
+use crate::collections::objects::{ConsistencyLevel, Object, OrderBy};
+use crate::collections::error::QueryError;
 use reqwest::Url;
-use std::error::Error;
+use std::{error::Error, sync::Arc};
 use uuid::Uuid;
 
 /// All objects endpoints and functionality described in
@@ -8,16 +9,13 @@ use uuid::Uuid;
 ///
 pub struct Objects {
     endpoint: Url,
-    client: reqwest::Client,
+    client: Arc<reqwest::Client>,
 }
 
 impl Objects {
-    pub fn new(url: &Url) -> Result<Self, Box<dyn Error>> {
+    pub(super) fn new(url: &Url, client: Arc<reqwest::Client>) -> Result<Self, Box<dyn Error>> {
         let endpoint = url.join("/v1/objects/")?;
-        Ok(Objects {
-            endpoint,
-            client: reqwest::Client::new(),
-        })
+        Ok(Objects { endpoint, client })
     }
 
     ///
@@ -287,6 +285,9 @@ mod tests {
             id,
             vector: None,
             tenant: None,
+            creation_time_unix: None,
+            last_update_time_unix: None,
+            vector_weights: None,
         }
     }
 
