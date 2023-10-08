@@ -1,11 +1,7 @@
 /// All custom errors
 use std::{
     error::Error,
-    fmt::{
-        Display,
-        Result,
-        Formatter,
-    },
+    fmt::{Display, Formatter, Result},
 };
 
 /// Custom QueryError, used when there was a mismatch in expected query parameters for endpoints.
@@ -29,5 +25,17 @@ impl Error for NotConfiguredError {}
 impl Display for NotConfiguredError {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "NotConfiguredError: {}", self.0)
+    }
+}
+
+/// Custom BatchError, used when the request to a batch endpoint results in a statuscode that isn't
+/// 200.
+#[derive(Debug)]
+pub struct BatchError(pub String);
+impl Error for BatchError {}
+
+impl Display for BatchError {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "BatchError: {}", self.0)
     }
 }

@@ -302,11 +302,11 @@ pub struct ShardingConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub desired_virtual_count: Option<u64>,
-    
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub actual_virtual_count: Option<u64>, // this could be problematic, it is read only
- 
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub key: Option<ShardingKey>,

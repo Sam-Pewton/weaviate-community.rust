@@ -259,8 +259,7 @@ mod tests {
     // implemented anything to mock the database. In future, actual tests will run as integration
     // tests in a container as part of the CICD process.
     use crate::collections::schema::{
-        ActivityStatus, Class, MultiTenancyConfig, Property, ShardStatus,
-        Tenant,
+        ActivityStatus, Class, MultiTenancyConfig, Property, ShardStatus, Tenant,
     };
     use crate::WeaviateClient;
 

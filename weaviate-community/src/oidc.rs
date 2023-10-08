@@ -36,7 +36,7 @@ impl Oidc {
             reqwest::StatusCode::OK => {
                 let parsed: OidcResponse = resp.json::<OidcResponse>().await?;
                 Ok(parsed)
-            },
+            }
             _ => {
                 return Err(Box::new(NotConfiguredError(
                     "OIDC is not configured or is unavailable".into(),
