@@ -51,3 +51,15 @@ impl Display for SchemaError {
         write!(f, "SchemaError: {}", self.0)
     }
 }
+
+/// Custom BackupError, used when the request to a schema endpoint results in a statuscode that
+/// isn't 200.
+#[derive(Debug)]
+pub struct BackupError(pub String);
+impl Error for BackupError {}
+
+impl Display for BackupError {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "BackupError: {}", self.0)
+    }
+}
