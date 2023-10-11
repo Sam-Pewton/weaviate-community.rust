@@ -4,3 +4,4 @@ pub mod objects;
 pub mod oidc;
 pub mod schema;
 pub mod meta;
+pub mod backups;

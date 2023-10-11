@@ -24,7 +24,8 @@ services:
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'none'
-      ENABLE_MODULES: ''
+      ENABLE_MODULES: 'backup-filesystem'
+      BACKUP_FILESYSTEM_PATH: '/'
       CLUSTER_HOSTNAME: 'weaviate1'
       LOG_LEVEL: 'debug'
     networks:
