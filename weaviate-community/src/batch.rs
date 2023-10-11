@@ -77,8 +77,10 @@ impl Batch {
 #[cfg(test)]
 mod tests {
     use crate::{
-        collections::{objects::{Object, Objects},
-        batch::{BatchDeleteRequest, MatchConfig}},
+        collections::{
+            batch::{BatchDeleteRequest, MatchConfig},
+            objects::{Object, Objects},
+        },
         WeaviateClient,
     };
     use uuid::Uuid;
@@ -126,7 +128,10 @@ mod tests {
             "valueText": "aaa"
         });
         BatchDeleteRequest {
-            matches: MatchConfig { class: class_name.into(), match_where: map },
+            matches: MatchConfig {
+                class: class_name.into(),
+                match_where: map,
+            },
             dry_run: None,
             output: None,
         }
@@ -142,7 +147,11 @@ mod tests {
         assert_eq!(&2, &res.len());
 
         let delete = test_delete_objects("TestObjectsBatchAdd");
-        let res = client.batch.objects_batch_delete(delete, None).await.unwrap();
+        let res = client
+            .batch
+            .objects_batch_delete(delete, None)
+            .await
+            .unwrap();
         assert_eq!(&2, &res.results.successful);
     }
 }

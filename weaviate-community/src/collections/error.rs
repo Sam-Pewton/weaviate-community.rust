@@ -39,3 +39,15 @@ impl Display for BatchError {
         write!(f, "BatchError: {}", self.0)
     }
 }
+
+/// Custom SchemaError, used when the request to a schema endpoint results in a statuscode that
+/// isn't 200.
+#[derive(Debug)]
+pub struct SchemaError(pub String);
+impl Error for SchemaError {}
+
+impl Display for SchemaError {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "SchemaError: {}", self.0)
+    }
+}

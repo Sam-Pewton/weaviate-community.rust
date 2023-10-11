@@ -1,64 +1,87 @@
-use crate::collections::schema::{Class, Property, ShardStatus, Tenant};
-use reqwest::{Response, Url};
+use crate::collections::error::SchemaError;
+use crate::collections::schema::{
+    Class, Classes, Property, Shard, ShardStatus, Shards, Tenant, Tenants,
+};
+use reqwest::Url;
 use std::error::Error;
 use std::sync::Arc;
 
 /// All schema related endpoints and functionality described in
 /// [Weaviate schema API documentation](https://weaviate.io/developers/weaviate/api/rest/schema)
-///
 pub struct Schema {
     endpoint: Url,
     client: Arc<reqwest::Client>,
 }
 
 impl Schema {
-    ///
     /// Create a new Schema object. The schema object is intended to like inside the WeaviateClient
     /// and be called through the WeaviateClient.
-    ///
     pub(super) fn new(url: &Url, client: Arc<reqwest::Client>) -> Result<Self, Box<dyn Error>> {
         let endpoint = url.join("/v1/schema/")?;
         Ok(Schema { endpoint, client })
     }
 
-    ///
-    /// Facilitates the retrieval of both the full Weaviate schema, and the retrieval of the
-    /// configuration for a single class in the schema.
-    ///
-    /// GET /v1/schema
-    /// ```
-    /// use weaviate_community::WeaviateClient;
-    ///
-    /// #[tokio::main]
-    /// async fn main() {
-    ///     let client = WeaviateClient::new("http://localhost:8080").unwrap();
-    ///     let response = client.schema.get(None).await;
-    /// }
-    /// ```
+    /// Facilitates the retrieval of the configuration for a single class in the schema.
     ///
     /// GET /v1/schema/{class_name}
     /// ```
     /// use weaviate_community::WeaviateClient;
     ///
     /// #[tokio::main]
-    /// async fn main() {
-    ///     let client = WeaviateClient::new("http://localhost:8080").unwrap();
-    ///     let response = client.schema.get(Some("Library")).await;
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let client = WeaviateClient::new("http://localhost:8080")?;
+    ///     let response = client.schema.get_class("Library").await;
+    ///     assert!(response.is_err());
+    ///     Ok(())
     /// }
     /// ```
-    ///
-    pub async fn get(&self, class_name: Option<&str>) -> Result<Response, Box<dyn Error>> {
-        let endpoint = match class_name {
-            Some(x) => self.endpoint.join(x)?,
-            None => self.endpoint.clone(),
-        };
-        let resp = self.client.get(endpoint).send().await?;
+    pub async fn get_class(&self, class_name: &str) -> Result<Class, Box<dyn Error>> {
+        let endpoint = self.endpoint.join(class_name)?;
+        let res = self.client.get(endpoint).send().await?;
 
-        //let test: Schema = resp.
-        Ok(resp)
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                let res: Class = res.json().await?;
+                Ok(res)
+            }
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling get_class endpoint.",
+                res.status()
+            )))),
+        }
     }
 
+    /// Facilitates the retrieval of the full Weaviate schema.
     ///
+    /// GET /v1/schema
+    /// ```
+    /// use weaviate_community::WeaviateClient;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let client = WeaviateClient::new("http://localhost:8080")?;
+    ///     let schema = client.schema.get().await?;
+    ///     println!("{:#?}", &schema);
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn get(&self) -> Result<Classes, Box<dyn Error>> {
+        let res = self.client.get(self.endpoint.clone()).send().await?;
+
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                let res: Classes = res.json().await?;
+                //let res2 = res.json::<serde_json::Value>().await?;
+                //let res: Classes = serde_json::from_value(res2)?;
+                Ok(res)
+            }
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling create_class endpoint.",
+                res.status()
+            )))),
+        }
+    }
+
     /// Create a new data object class in the schema.
     ///
     /// Note that from 1.5.0, creating a schema is optional, as Auto Schema is available. See for
@@ -71,7 +94,7 @@ impl Schema {
     /// use weaviate_community::collections::schema::Class;
     ///
     /// #[tokio::main]
-    /// async fn main() {
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///     let class = Class {
     ///         class: "Library".into(),
     ///         description: "Library Class".into(),
@@ -86,12 +109,14 @@ impl Schema {
     ///         replication_config: None,
     ///     };
     ///
-    ///     let client = WeaviateClient::new("http://localhost:8080").unwrap();
-    ///     let response = client.schema.create_class(&class).await;
+    ///     let client = WeaviateClient::new("http://localhost:8080")?;
+    ///     let class = client.schema.create_class(&class).await?;
+    ///     println!("{:#?}", &class);
+    ///
+    ///     Ok(())
     /// }
     /// ```
-    ///
-    pub async fn create_class(&self, class: &Class) -> Result<reqwest::Response, Box<dyn Error>> {
+    pub async fn create_class(&self, class: &Class) -> Result<Class, Box<dyn Error>> {
         let payload = serde_json::to_value(&class).unwrap();
         let res = self
             .client
@@ -99,7 +124,16 @@ impl Schema {
             .json(&payload)
             .send()
             .await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                let res: Class = res.json().await?;
+                Ok(res)
+            }
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling create_class endpoint.",
+                res.status()
+            )))),
+        }
     }
 
     ///
@@ -116,29 +150,45 @@ impl Schema {
     /// }
     /// ```
     ///
-    pub async fn delete(&self, class_name: &str) -> Result<reqwest::Response, Box<dyn Error>> {
+    pub async fn delete(&self, class_name: &str) -> Result<bool, Box<dyn Error>> {
         let endpoint = self.endpoint.join(class_name)?;
         let res = self.client.delete(endpoint).send().await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::OK => Ok(true),
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling delete endpoint.",
+                res.status()
+            )))),
+        }
     }
 
-    ///
     /// Update settings of an existing schema class.
+    ///
     /// Use this endpoint to alter an existing class in the schema. Note that not all settings are
     /// mutable. If an error about immutable fields is returned and you still need to update this
     /// particular setting, you will have to delete the class (and the underlying data) and
-    /// recreate. This endpoint cannot be used to modify properties. Instead, use
-    /// POST /v1/schema/{ClassName}/properties. A typical use case for this endpoint is to update
-    /// configuration, such as the vectorIndexConfig. Note that even in mutable sections,
-    /// such as vectorIndexConfig, some fields may be immutable.
+    /// recreate. This endpoint cannot be used to modify properties.
+    //  Instead, use POST /v1/schema/{ClassName}/properties (add_property method).
+    //
+    /// A typical use case for this endpoint is to update configuration, such as the
+    /// vectorIndexConfig. Note that even in mutable sections, such as vectorIndexConfig,
+    /// some fields may be immutable.
     ///
     /// You should attach a body to this PUT request with the entire new configuration of the class
-    ///
-    pub async fn update(&self, class: &Class) -> Result<reqwest::Response, Box<dyn Error>> {
+    pub async fn update(&self, class: &Class) -> Result<Class, Box<dyn Error>> {
         let endpoint = self.endpoint.join(&class.class)?;
         let payload = serde_json::to_value(&class)?;
         let res = self.client.put(endpoint).json(&payload).send().await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                let res: Class = res.json().await?;
+                Ok(res)
+            }
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling update endpoint.",
+                res.status()
+            )))),
+        }
     }
 
     ///
@@ -148,24 +198,35 @@ impl Schema {
         &self,
         class_name: &str,
         property: &Property,
-    ) -> Result<reqwest::Response, Box<dyn Error>> {
+    ) -> Result<Property, Box<dyn Error>> {
         let mut endpoint = class_name.to_string();
         endpoint.push_str("/properties");
         let endpoint = self.endpoint.join(&endpoint)?;
         let payload = serde_json::to_value(&property)?;
         let res = self.client.post(endpoint).json(&payload).send().await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                let res: Property = res.json().await?;
+                Ok(res)
+            }
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling add_property endpoint.",
+                res.status()
+            )))),
+        }
     }
 
     ///
     /// View all of the shards for a particular class.
     ///
-    pub async fn get_shards(&self, class_name: &str) -> Result<reqwest::Response, Box<dyn Error>> {
+    pub async fn get_shards(&self, class_name: &str) -> Result<Shards, Box<dyn Error>> {
         let mut endpoint = class_name.to_string();
         endpoint.push_str("/shards");
         let endpoint = self.endpoint.join(&endpoint)?;
         let res = self.client.get(endpoint).send().await?;
-        Ok(res)
+        let shards = res.json::<Vec<Shard>>().await?;
+        let shards = Shards { shards };
+        Ok(shards)
     }
 
     ///
@@ -176,28 +237,44 @@ impl Schema {
         class_name: &str,
         shard_name: &str,
         status: ShardStatus,
-    ) -> Result<reqwest::Response, Box<dyn Error>> {
+    ) -> Result<Shard, Box<dyn Error>> {
         let mut endpoint = class_name.to_string();
         endpoint.push_str("/shards/");
         endpoint.push_str(shard_name);
         let endpoint = self.endpoint.join(&endpoint)?;
         let payload = serde_json::json!({ "status": status });
         let res = self.client.put(endpoint).json(&payload).send().await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::OK => Ok(Shard {
+                name: shard_name.into(),
+                status,
+            }),
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling update class shard endpoint.",
+                res.status()
+            )))),
+        }
     }
 
     ///
     /// List tenants
     ///
-    pub async fn list_tenants(
-        &self,
-        class_name: &str,
-    ) -> Result<reqwest::Response, Box<dyn Error>> {
+    pub async fn list_tenants(&self, class_name: &str) -> Result<Tenants, Box<dyn Error>> {
         let mut endpoint = class_name.to_string();
         endpoint.push_str("/tenants");
         let endpoint = self.endpoint.join(&endpoint)?;
         let res = self.client.get(endpoint).send().await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                let tenants = res.json::<Vec<Tenant>>().await?;
+                let tenants = Tenants { tenants };
+                Ok(tenants)
+            }
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling list_tenants endpoint.",
+                res.status()
+            )))),
+        }
     }
 
     ///
@@ -206,14 +283,24 @@ impl Schema {
     pub async fn add_tenants(
         &self,
         class_name: &str,
-        tenants: &Vec<Tenant>,
-    ) -> Result<reqwest::Response, Box<dyn Error>> {
+        tenants: &Tenants,
+    ) -> Result<Tenants, Box<dyn Error>> {
         let mut endpoint = class_name.to_string();
         endpoint.push_str("/tenants");
         let endpoint = self.endpoint.join(&endpoint)?;
-        let payload = serde_json::to_value(&tenants)?;
+        let payload = serde_json::to_value(&tenants.tenants)?;
         let res = self.client.post(endpoint).json(&payload).send().await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                let tenants = res.json::<Vec<Tenant>>().await?;
+                let tenants = Tenants { tenants };
+                Ok(tenants)
+            }
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling list_tenants endpoint.",
+                res.status()
+            )))),
+        }
     }
 
     ///
@@ -223,13 +310,19 @@ impl Schema {
         &self,
         class_name: &str,
         tenants: &Vec<&str>,
-    ) -> Result<reqwest::Response, Box<dyn Error>> {
+    ) -> Result<bool, Box<dyn Error>> {
         let mut endpoint = class_name.to_string();
         endpoint.push_str("/tenants");
         let endpoint = self.endpoint.join(&endpoint)?;
         let payload = serde_json::to_value(&tenants)?;
         let res = self.client.delete(endpoint).json(&payload).send().await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::OK => Ok(true),
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling remove_tenants endpoint.",
+                res.status()
+            )))),
+        }
     }
 
     ///
@@ -242,14 +335,16 @@ impl Schema {
     pub async fn update_tenants(
         &self,
         class_name: &str,
-        tenants: &Vec<Tenant>,
-    ) -> Result<reqwest::Response, Box<dyn Error>> {
+        tenants: &Tenants,
+    ) -> Result<Tenants, Box<dyn Error>> {
         let mut endpoint = class_name.to_string();
         endpoint.push_str("/tenants");
         let endpoint = self.endpoint.join(&endpoint)?;
-        let payload = serde_json::to_value(&tenants)?;
+        let payload = serde_json::to_value(&tenants.tenants)?;
         let res = self.client.put(endpoint).json(&payload).send().await?;
-        Ok(res)
+        let tenants = res.json::<Vec<Tenant>>().await?;
+        let tenants = Tenants { tenants };
+        Ok(tenants)
     }
 }
 
@@ -259,37 +354,24 @@ mod tests {
     // implemented anything to mock the database. In future, actual tests will run as integration
     // tests in a container as part of the CICD process.
     use crate::collections::schema::{
-        ActivityStatus, Class, MultiTenancyConfig, Property, ShardStatus, Tenant,
+        ActivityStatus, Class, ClassBuilder, MultiTenancyConfig, Property, ShardStatus, Tenant,
+        Tenants,
     };
     use crate::WeaviateClient;
 
-    ///
     /// Helper function for generating a testing class
-    ///
     fn test_class(class_name: &str, enabled: bool) -> Class {
-        Class {
-            class: class_name.into(),
-            description: "Test".into(),
-            properties: None,
-            vector_index_type: None,
-            vector_index_config: None,
-            vectorizer: None,
-            module_config: None,
-            inverted_index_config: None,
-            sharding_config: None,
-            multi_tenancy_config: Some(MultiTenancyConfig { enabled }),
-            replication_config: None,
-        }
+        ClassBuilder::new(class_name, "Test")
+            .multi_tenancy_config(MultiTenancyConfig { enabled })
+            .build()
     }
 
-    ///
     /// Helper function for generating a testing property
-    ///
     fn test_property(property_name: &str) -> Property {
         Property {
             name: property_name.into(),
             data_type: vec!["boolean".into()],
-            description: Some("this is a test to see camel case".into()),
+            description: Some("test property".into()),
             index_filterable: None,
             index_searchable: None,
             module_config: None,
@@ -298,20 +380,20 @@ mod tests {
         }
     }
 
-    ///
     /// Helper function for generating some test tenants, as shown on the weaviate API webpage.
-    ///
-    fn test_tenants() -> Vec<Tenant> {
-        vec![
-            Tenant {
-                name: "TENANT_A".into(),
-                activity_status: None,
-            },
-            Tenant {
-                name: "TENANT_B".into(),
-                activity_status: Some(ActivityStatus::COLD),
-            },
-        ]
+    fn test_tenants() -> Tenants {
+        Tenants {
+            tenants: vec![
+                Tenant {
+                    name: "TENANT_A".into(),
+                    activity_status: None,
+                },
+                Tenant {
+                    name: "TENANT_B".into(),
+                    activity_status: Some(ActivityStatus::COLD),
+                },
+            ],
+        }
     }
 
     #[tokio::test]
@@ -319,11 +401,11 @@ mod tests {
         // Insert the class and get it from the schema
         let class = test_class("CreateSingle", false);
         let client = WeaviateClient::new("http://localhost:8080").unwrap();
-        let _ = client.schema.create_class(&class).await;
-        let result = client.schema.get(Some(&class.class)).await;
-        let test = result.unwrap().json::<serde_json::Value>().await.unwrap();
-        let test2: Class = serde_json::from_value(test.clone()).unwrap();
-        println!("{:#?}", std::mem::size_of_val(&test2));
+        let result = client.schema.create_class(&class).await;
+        assert!(&result.is_ok());
+        assert_eq!(&result.unwrap().class, "CreateSingle");
+        //let test = result.unwrap().json::<serde_json::Value>().await.unwrap();
+        //let test2: Class = serde_json::from_value(test.clone()).unwrap();
 
         //assert_eq!(
         //    class.class,
@@ -332,20 +414,51 @@ mod tests {
 
         // Delete it to tidy up after ourselves
         let result = client.schema.delete(&class.class).await;
-        assert_eq!(200, result.unwrap().status());
+        assert!(result.unwrap());
     }
 
     #[tokio::test]
-    async fn test_delete_single_class() {
+    async fn test_get_single_class_ok() {
         // Insert, to make sure it exists.
-        let class = test_class("DeleteSingle", false);
+        let class = test_class("GetSingleClass", false);
         let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let result = client.schema.create_class(&class).await;
-        assert_eq!(200, result.unwrap().status());
+        assert!(result.is_ok());
+
+        // get it
+        let result = client.schema.get_class(&class.class).await;
+        assert!(result.is_ok());
+        assert_eq!(&result.unwrap().class, "GetSingleClass");
 
         // Delete it and make sure that it is gone
         let result = client.schema.delete(&class.class).await;
-        assert_eq!(200, result.unwrap().status());
+        assert!(result.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_get_single_class_err() {
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let result = client.schema.get_class("DOESNOTEXIST").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_get_all_classes() {
+        // Insert, to make sure it exists.
+        let class = test_class("GetAllClasses", false);
+        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let result = client.schema.create_class(&class).await;
+        assert!(result.is_ok());
+
+        let result = client.schema.get().await;
+        assert!(result.is_ok());
+
+        // There could be more than just one in the schema, depending on when the tests run.
+        assert_ne!(&result.unwrap().classes.len(), &0);
+
+        // Delete it and make sure that it is gone
+        let result = client.schema.delete(&class.class).await;
+        assert!(result.unwrap());
     }
 
     #[tokio::test]
@@ -354,24 +467,16 @@ mod tests {
         let mut class = test_class("UpdateSingle", false);
         let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let result = client.schema.create_class(&class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
-        assert_eq!(
-            "Test",
-            result.unwrap().json::<serde_json::Value>().await.unwrap()["description"]
-        );
+        assert!(result.is_ok());
 
         // Update it and make sure that it changed
         class.description = "Updated".into();
         let result = client.schema.update(&class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
-        assert_eq!(
-            "Updated",
-            result.unwrap().json::<serde_json::Value>().await.unwrap()["description"]
-        );
+        assert_eq!("Updated", result.unwrap().description);
 
         // Delete it and make sure that it is gone
         let result = client.schema.delete(&class.class).await;
-        assert_eq!(200, result.unwrap().status());
+        assert!(result.unwrap());
     }
 
     #[tokio::test]
@@ -380,32 +485,26 @@ mod tests {
         let class = test_class("AddProperty", false);
         let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let result = client.schema.create_class(&class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert!(result.is_ok());
 
         // Validate the property does not exist in the class schema
-        let result = client.schema.get(Some(&class.class)).await;
-        assert_eq!(
-            serde_json::Value::Null,
-            result.unwrap().json::<serde_json::Value>().await.unwrap()["properties"]
-        );
+        let result = client.schema.get_class(&class.class).await;
+        assert_eq!(None, result.unwrap().properties);
 
         // Update class with test property
         let property = test_property("TestProperty");
 
         // Update it and make sure that it changed
         let result = client.schema.add_property(&class.class, &property).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert_eq!("testProperty", result.unwrap().name);
 
         // Validate the property now exists in the class schema
-        let result = client.schema.get(Some(&class.class)).await;
-        assert_eq!(
-            "testProperty",
-            result.unwrap().json::<serde_json::Value>().await.unwrap()["properties"][0]["name"]
-        );
+        let result = client.schema.get_class(&class.class).await;
+        assert!(result.unwrap().properties.is_some());
 
         // Delete it and make sure that it is gone
         let result = client.schema.delete(&class.class).await;
-        assert_eq!(200, result.unwrap().status());
+        assert!(result.unwrap());
     }
 
     #[tokio::test]
@@ -413,18 +512,14 @@ mod tests {
         let class = test_class("GetShards", false);
         let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let result = client.schema.create_class(&class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert!(result.is_ok());
 
-        let result = client.schema.get_shards(&class.class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
-        assert_eq!(
-            "READY",
-            result.unwrap().json::<serde_json::Value>().await.unwrap()[0]["status"]
-        );
+        let shards = client.schema.get_shards(&class.class).await;
+        assert_eq!(ShardStatus::READY, shards.unwrap().shards[0].status);
 
         // Delete it and make sure that it is gone
         let result = client.schema.delete(&class.class).await;
-        assert_eq!(200, result.unwrap().status());
+        assert!(result.unwrap());
     }
 
     #[tokio::test]
@@ -432,35 +527,35 @@ mod tests {
         let class = test_class("UpdateShards", false);
         let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let result = client.schema.create_class(&class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert!(result.is_ok());
 
         // Get the name of the shard
         let result = client.schema.get_shards(&class.class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
-        let shards = result.unwrap().json::<serde_json::Value>().await.unwrap();
-        assert_eq!("READY", shards[0]["status"]);
+        let shards = result.unwrap();
+        assert_eq!(1, shards.shards.len());
+        assert_eq!(ShardStatus::READY, shards.shards[0].status);
 
         // Update the shard status
-        let name = serde_json::to_string(&shards[0]["name"]).unwrap().clone();
+        let name = serde_json::to_string(&shards.shards[0].name)
+            .unwrap()
+            .clone();
         let name = name.trim_start_matches("\"");
         let name = name.trim_end_matches("\"");
-        let _result = client
+        let result = client
             .schema
             .update_class_shard(&class.class, &name, ShardStatus::READONLY)
             .await;
-        //println!("{:?}", result.as_ref().unwrap().status());
-        //assert_eq!(200, result.as_ref().unwrap().status());
+        assert_eq!(ShardStatus::READONLY, result.unwrap().status);
 
         // Get the shard again
         let result = client.schema.get_shards(&class.class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
-        let _shards = result.unwrap().json::<serde_json::Value>().await.unwrap();
-        //assert_eq!("READONLY", shards[0]["status"]);
-        //println!("{:?}", shards[0]["status"]);
+        let shards = result.unwrap();
+        assert_eq!(1, shards.shards.len());
+        assert_eq!(ShardStatus::READONLY, shards.shards[0].status);
 
         // Delete it and make sure that it is gone
         let result = client.schema.delete(&class.class).await;
-        assert_eq!(200, result.unwrap().status());
+        assert!(result.unwrap());
     }
 
     #[tokio::test]
@@ -468,36 +563,36 @@ mod tests {
         let class = test_class("ListTenants", true);
         let client = WeaviateClient::new("http://localhost:8080").unwrap();
         let result = client.schema.create_class(&class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert!(result.is_ok());
 
         let result = client.schema.list_tenants(&class.class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert_eq!(0, result.unwrap().tenants.len());
 
         let mut tenants = test_tenants();
         let result = client.schema.add_tenants(&class.class, &tenants).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert_eq!(2, result.unwrap().tenants.len());
 
         let result = client.schema.list_tenants(&class.class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert_eq!(2, result.unwrap().tenants.len());
 
-        tenants[0].activity_status = Some(ActivityStatus::COLD);
-        tenants[1].activity_status = Some(ActivityStatus::HOT);
+        tenants.tenants[0].activity_status = Some(ActivityStatus::COLD);
+        tenants.tenants[1].activity_status = Some(ActivityStatus::HOT);
         let result = client.schema.update_tenants(&class.class, &tenants).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert_eq!(2, result.unwrap().tenants.len());
 
         let result = client.schema.list_tenants(&class.class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert_eq!(2, result.unwrap().tenants.len());
 
         let result = client
             .schema
             .remove_tenants(&class.class, &vec!["TENANT_A", "TENANT_B"])
             .await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert!(result.is_ok());
         let result = client.schema.list_tenants(&class.class).await;
-        assert_eq!(200, result.as_ref().unwrap().status());
+        assert_eq!(0, result.unwrap().tenants.len());
 
         // Delete it and make sure that it is gone
         let result = client.schema.delete(&class.class).await;
-        assert_eq!(200, result.unwrap().status());
+        assert!(result.unwrap());
     }
 }
