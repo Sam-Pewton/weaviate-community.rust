@@ -1,9 +1,14 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Debug)]
 pub enum BackupBackends {
+    #[serde(rename = "s3")]
     S3,
+    #[serde(rename = "gcs")]
     GCS,
+    #[serde(rename = "azure")]
     AZURE,
+    #[serde(rename = "filesystem")]
     FILESYSTEM,
 }
 
@@ -43,5 +48,15 @@ pub struct BackupStatusResponse {
     pub backend: String,
     pub id: String,
     pub path: Option<String>,
+    pub status: BackupStatus,
+}
+
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BackupResponse {
+    pub backend: BackupBackends,
+    pub classes: Vec<String>,
+    pub id: String,
+    pub path: String,
     pub status: BackupStatus,
 }
