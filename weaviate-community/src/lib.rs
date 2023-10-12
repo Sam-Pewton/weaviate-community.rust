@@ -12,7 +12,6 @@ mod nodes;
 mod objects;
 mod oidc;
 mod schema;
-mod utils;
 pub use self::backups::Backups;
 pub use self::batch::Batch;
 pub use self::classification::_Classification;
