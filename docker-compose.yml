@@ -31,10 +31,10 @@ services:
     networks:
       - system-integration
 
-        #  si-tests:
-        #    image: alpine/curl:8.1.2
-        #    container_name: 'si-tests'
-        #    command: sleep infinity
-        #    networks:
-        #      - system-integration
+  si-tests:
+    image: alpine/curl:8.1.2
+    container_name: 'si-tests'
+    command: sleep infinity
+    networks:
+      - system-integration
 ...
