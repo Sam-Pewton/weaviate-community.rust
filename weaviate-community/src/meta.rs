@@ -6,6 +6,7 @@ use crate::collections::meta::Metadata;
 
 /// All meta related endpoints and functionality described in
 /// [Weaviate meta API documentation](https://weaviate.io/developers/weaviate/api/rest/meta)
+#[derive(Debug)]
 pub struct Meta {
     /// The full URL to the Meta endpoint
     endpoint: Url,
@@ -32,12 +33,12 @@ impl Meta {
     /// If the client is unable to execute get, an Err result is returned.
     ///
     /// # Examples
-    /// ```
+    /// ```no_run
     /// use weaviate_community::WeaviateClient;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080")?;
+    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
     ///     let res = client.meta.get_meta().await?;
     ///     println!("{:#?}", res);
     ///     Ok(())
@@ -52,12 +53,13 @@ impl Meta {
 
 #[cfg(test)]
 mod tests {
-    use crate::WeaviateClient;
+    use crate::{WeaviateClient, AuthApiKey};
 
     /// Test the get_meta endpoint
     #[tokio::test]
     async fn test_get_meta() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let res = client.meta.get_meta().await;
         assert_eq!(
             "http://[::]:8080",

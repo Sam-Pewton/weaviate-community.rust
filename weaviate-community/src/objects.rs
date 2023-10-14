@@ -7,6 +7,7 @@ use uuid::Uuid;
 /// All objects endpoints and functionality described in
 /// [Weaviate objects API documentation](https://weaviate.io/developers/weaviate/api/rest/objects)
 ///
+#[derive(Debug)]
 pub struct Objects {
     endpoint: Url,
     client: Arc<reqwest::Client>,
@@ -272,7 +273,7 @@ mod tests {
     use uuid::Uuid;
 
     use crate::collections::objects::{ConsistencyLevel, Object};
-    use crate::WeaviateClient;
+    use crate::{WeaviateClient, AuthApiKey};
 
     fn test_object(class_name: &str, id: Option<Uuid>) -> Object {
         let properties = serde_json::json!({
@@ -293,7 +294,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_objects() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303").unwrap();
         let object = test_object("TestListObject", Some(uuid.clone()));
         let res = client
@@ -328,7 +330,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_object() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd202").unwrap();
         let object = test_object("TestGetObject", Some(uuid.clone()));
         let res = client
@@ -356,7 +359,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_object() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd967").unwrap();
         let object = test_object("TestDeleteObject", Some(uuid.clone()));
         let res = client
@@ -373,7 +377,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_exists_object() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd555").unwrap();
         let object = test_object("TestExistsObject", Some(uuid.clone()));
         let res = client
@@ -416,7 +421,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_object() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd178").unwrap();
         let object = test_object("TestCreateObject", Some(uuid.clone()));
         let res = client
@@ -438,7 +444,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_replace_object() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd666").unwrap();
         let object = test_object("TestReplaceObject", Some(uuid.clone()));
         let res = client
@@ -488,7 +495,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_object() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let uuid = Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd444").unwrap();
         let object = test_object("TestUpdateObject", Some(uuid.clone()));
         let res = client

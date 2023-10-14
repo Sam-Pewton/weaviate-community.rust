@@ -2,6 +2,7 @@ use reqwest::Url;
 use std::error::Error;
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct _Modules {
     _endpoint: Url,
     _client: Arc<reqwest::Client>,

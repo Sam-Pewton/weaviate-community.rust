@@ -14,6 +14,7 @@ use crate::collections::error::BackupError;
 
 /// All backup related endpoints and functionality described in
 /// [Weaviate meta API documentation](https://weaviate.io/developers/weaviate/api/rest/backups)
+#[derive(Debug)]
 pub struct Backups {
     endpoint: Url,
     client: Arc<reqwest::Client>,
@@ -35,7 +36,7 @@ impl Backups {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080")?;
+    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
     ///     let my_request = BackupCreateRequest { 
     ///         id: "doc-test-backup".into(),
     ///         include: None, 
@@ -87,7 +88,7 @@ impl Backups {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080")?;
+    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
     ///     let res = client.backups.get_backup_status(
     ///         &BackupBackends::FILESYSTEM,
     ///         "doc-test-backup",
@@ -121,7 +122,7 @@ impl Backups {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080")?;
+    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
     ///     let my_request = BackupRestoreRequest { 
     ///         include: None, 
     ///         exclude: None
@@ -207,7 +208,7 @@ mod tests {
                 BackupRestoreRequest
             }, 
             objects::Object
-        }
+        }, AuthApiKey
     };
 
     fn test_backup_create_req() -> BackupCreateRequest {
@@ -235,7 +236,8 @@ mod tests {
     #[tokio::test]
     async fn test_create_backup() {
         let obj = test_object("BackupTest");
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let _ = client.objects.create(&obj, None).await;
 
         // create

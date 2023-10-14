@@ -6,6 +6,7 @@ use std::sync::Arc;
 use crate::collections::error::NotConfiguredError;
 use crate::collections::oidc::OidcResponse;
 
+#[derive(Debug)]
 pub struct Oidc {
     endpoint: Url,
     client: Arc<reqwest::Client>,
@@ -48,11 +49,12 @@ impl Oidc {
 
 #[cfg(test)]
 mod tests {
-    use crate::WeaviateClient;
+    use crate::{WeaviateClient, AuthApiKey};
 
     #[tokio::test]
     async fn test_get_open_id_configuration() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let _res = client.oidc.get_open_id_configuration().await;
     }
 }
