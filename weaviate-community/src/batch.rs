@@ -8,6 +8,7 @@ use crate::collections::{
     objects::{ConsistencyLevel, Objects},
 };
 
+#[derive(Debug)]
 pub struct Batch {
     endpoint: Url,
     client: Arc<reqwest::Client>,
@@ -81,7 +82,7 @@ mod tests {
             batch::{BatchDeleteRequest, MatchConfig},
             objects::{Object, Objects},
         },
-        WeaviateClient,
+        WeaviateClient, AuthApiKey,
     };
     use uuid::Uuid;
 
@@ -139,7 +140,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_objects_batch_add_and_delete() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let uuid_one = Uuid::new_v4();
         let uuid_two = Uuid::new_v4();
         let objects = test_objects("TestObjectsBatchAdd", &uuid_one, &uuid_two);

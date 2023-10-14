@@ -43,7 +43,7 @@ use uuid::Uuid;
 ///     };
 ///
 ///     // Insert the new object into the database
-///     let client = WeaviateClient::new("http://localhost:8080").unwrap();
+///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
 ///     let res = client.objects.create(&new_class, Some(ConsistencyLevel::ALL)).await;
 /// }
 /// ```

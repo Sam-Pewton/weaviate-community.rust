@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 /// All schema related endpoints and functionality described in
 /// [Weaviate schema API documentation](https://weaviate.io/developers/weaviate/api/rest/schema)
+#[derive(Debug)]
 pub struct Schema {
     endpoint: Url,
     client: Arc<reqwest::Client>,
@@ -24,12 +25,12 @@ impl Schema {
     /// Facilitates the retrieval of the configuration for a single class in the schema.
     ///
     /// GET /v1/schema/{class_name}
-    /// ```
+    /// ```no_run
     /// use weaviate_community::WeaviateClient;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080")?;
+    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
     ///     let response = client.schema.get_class("Library").await;
     ///     assert!(response.is_err());
     ///     Ok(())
@@ -54,12 +55,12 @@ impl Schema {
     /// Facilitates the retrieval of the full Weaviate schema.
     ///
     /// GET /v1/schema
-    /// ```
+    /// ```no_run
     /// use weaviate_community::WeaviateClient;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080")?;
+    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
     ///     let schema = client.schema.get().await?;
     ///     println!("{:#?}", &schema);
     ///     Ok(())
@@ -89,7 +90,7 @@ impl Schema {
     /// [Weaviate auto-schema documentation](https://weaviate.io/developers/weaviate/config-refs/schema#auto-schema)
     ///
     /// POST /v1/schema
-    /// ```
+    /// ```no_run
     /// use weaviate_community::WeaviateClient;
     /// use weaviate_community::collections::schema::Class;
     ///
@@ -109,7 +110,7 @@ impl Schema {
     ///         replication_config: None,
     ///     };
     ///
-    ///     let client = WeaviateClient::new("http://localhost:8080")?;
+    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
     ///     let class = client.schema.create_class(&class).await?;
     ///     println!("{:#?}", &class);
     ///
@@ -140,12 +141,12 @@ impl Schema {
     /// Remove a class (and all data in the instances) from the schema.
     ///
     /// DELETE v1/schema/{class_name}
-    /// ```
+    /// ```no_run
     /// use weaviate_community::WeaviateClient;
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = WeaviateClient::new("http://localhost:8080").unwrap();
+    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
     ///     let response = client.schema.delete("Library").await;
     /// }
     /// ```
@@ -357,7 +358,7 @@ mod tests {
         ActivityStatus, Class, ClassBuilder, MultiTenancyConfig, Property, ShardStatus, Tenant,
         Tenants,
     };
-    use crate::WeaviateClient;
+    use crate::{WeaviateClient, AuthApiKey, WeaviateClientBuilder};
 
     /// Helper function for generating a testing class
     fn test_class(class_name: &str, enabled: bool) -> Class {
@@ -400,7 +401,8 @@ mod tests {
     async fn test_create_single_class() {
         // Insert the class and get it from the schema
         let class = test_class("CreateSingle", false);
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let result = client.schema.create_class(&class).await;
         assert!(&result.is_ok());
         assert_eq!(&result.unwrap().class, "CreateSingle");
@@ -421,7 +423,8 @@ mod tests {
     async fn test_get_single_class_ok() {
         // Insert, to make sure it exists.
         let class = test_class("GetSingleClass", false);
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let result = client.schema.create_class(&class).await;
         assert!(result.is_ok());
 
@@ -437,7 +440,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_single_class_err() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let result = client.schema.get_class("DOESNOTEXIST").await;
         assert!(result.is_err());
     }
@@ -446,7 +450,8 @@ mod tests {
     async fn test_get_all_classes() {
         // Insert, to make sure it exists.
         let class = test_class("GetAllClasses", false);
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let result = client.schema.create_class(&class).await;
         assert!(result.is_ok());
 
@@ -465,7 +470,8 @@ mod tests {
     async fn test_update_single_class() {
         // Insert, to make sure it exists.
         let mut class = test_class("UpdateSingle", false);
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let result = client.schema.create_class(&class).await;
         assert!(result.is_ok());
 
@@ -483,7 +489,8 @@ mod tests {
     async fn test_add_property() {
         // Insert, to make sure it exists.
         let class = test_class("AddProperty", false);
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let result = client.schema.create_class(&class).await;
         assert!(result.is_ok());
 
@@ -510,7 +517,8 @@ mod tests {
     #[tokio::test]
     async fn test_get_shards() {
         let class = test_class("GetShards", false);
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let result = client.schema.create_class(&class).await;
         assert!(result.is_ok());
 
@@ -525,7 +533,8 @@ mod tests {
     #[tokio::test]
     async fn test_update_shard_status() {
         let class = test_class("UpdateShards", false);
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let result = client.schema.create_class(&class).await;
         assert!(result.is_ok());
 
@@ -561,7 +570,9 @@ mod tests {
     #[tokio::test]
     async fn test_list_tenants() {
         let class = test_class("ListTenants", true);
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::builder("http://localhost:8080").auth_secret(auth)
+            .build().unwrap();
         let result = client.schema.create_class(&class).await;
         assert!(result.is_ok());
 

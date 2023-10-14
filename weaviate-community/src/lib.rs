@@ -23,9 +23,14 @@ pub use self::oidc::Oidc;
 pub use self::schema::Schema;
 use std::sync::Arc;
 
+use collections::auth::AuthApiKey;
 use reqwest::Url;
+use reqwest::header::HeaderMap;
+use reqwest::header::AUTHORIZATION;
 use std::error::Error;
 
+/// An asynchronous `WeaviateClient` to interact with a Weaviate database.
+#[derive(Debug)]
 pub struct WeaviateClient {
     pub base_url: Url,
     client: Arc<reqwest::Client>,
@@ -41,9 +46,36 @@ pub struct WeaviateClient {
 }
 
 impl WeaviateClient {
-    pub fn new(url: &str) -> Result<Self, Box<dyn Error>> {
+    /// Construct a new `WeaviateClient`
+    ///
+    /// # Example
+    /// ```
+    /// use weaviate_community::WeaviateClient;
+    /// use weaviate_community::collections::auth::AuthApiKey;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let auth = AuthApiKey::new("test-key");
+    ///     let client = WeaviateClient::new("http://localhost:8080", Some(auth))?;
+    ///     Ok(())
+    /// }
+    /// ```
+    pub fn new(url: &str, auth_client_secret: Option<AuthApiKey>) -> Result<Self, Box<dyn Error>> {
         let base = Url::parse(url)?;
-        let client = Arc::new(reqwest::Client::new());
+        let mut client_builder = reqwest::Client::builder();
+
+        // Add the authorization header to the client if it is present
+        if let Some(auth) = auth_client_secret {
+            let mut headers = HeaderMap::new();
+            headers.insert(
+                AUTHORIZATION,
+                auth.get_header_value()
+            );
+            client_builder = client_builder.default_headers(headers);
+        };
+
+        // Each of the endpoint categories hold a strong ref to the main client.
+        let client = Arc::new(client_builder.build()?);
         let schema = Schema::new(&base, Arc::clone(&client))?;
         let objects = Objects::new(&base, Arc::clone(&client))?;
         let batch = Batch::new(&base, Arc::clone(&client))?;
@@ -53,6 +85,7 @@ impl WeaviateClient {
         let nodes = Nodes::new(&base, Arc::clone(&client))?;
         let oidc = Oidc::new(&base, Arc::clone(&client))?;
         let modules = _Modules::new(&base, Arc::clone(&client))?;
+
         Ok(WeaviateClient {
             base_url: base,
             client,
@@ -82,6 +115,22 @@ impl WeaviateClient {
     ///
     /// # Errors
     /// When there is a reqwest error
+    ///
+    /// # Example
+    /// ```
+    /// use weaviate_community::WeaviateClient;
+    /// use weaviate_community::collections::auth::AuthApiKey;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let auth = AuthApiKey::new("test-key");
+    ///     let client = WeaviateClient::builder("http://localhost:8080")
+    ///         .auth_secret(auth)
+    ///         .build()?;
+    ///     let res = client.is_live().await;
+    ///     Ok(())
+    /// }
+    /// ```
     pub async fn is_live(&self) -> Result<bool, Box<dyn Error>> {
         let endpoint = self.base_url.join("/v1/.well-known/live")?;
         let resp = self.client.get(endpoint).send().await?;
@@ -107,6 +156,22 @@ impl WeaviateClient {
     ///
     /// # Errors
     /// When there is a reqwest error
+    ///
+    /// # Example
+    /// ```
+    /// use weaviate_community::WeaviateClient;
+    /// use weaviate_community::collections::auth::AuthApiKey;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let auth = AuthApiKey::new("test-key");
+    ///     let client = WeaviateClient::builder("http://localhost:8080")
+    ///         .auth_secret(auth)
+    ///         .build()?;
+    ///     let res = client.is_ready().await;
+    ///     Ok(())
+    /// }
+    /// ```
     pub async fn is_ready(&self) -> Result<bool, Box<dyn Error>> {
         let endpoint = self.base_url.join("/v1/.well-known/ready")?;
         let resp = self.client.get(endpoint).send().await?;
@@ -114,6 +179,67 @@ impl WeaviateClient {
             reqwest::StatusCode::OK => Ok(true),
             _ => Ok(false),
         }
+    }
+
+    /// Builder for the WeaviateClient
+    ///
+    /// # Examples
+    /// Anonymous
+    /// ```
+    /// use weaviate_community::WeaviateClient;
+    /// let client = WeaviateClient::builder("http://localhost:8080").build();
+    /// ```
+    ///
+    /// Authenticated with API key
+    /// ```
+    /// use weaviate_community::WeaviateClient;
+    /// use weaviate_community::collections::auth::AuthApiKey;
+    ///
+    /// let auth = AuthApiKey::new("your-key");
+    /// let client = WeaviateClient::builder("http://localhost:8080").auth_secret(auth).build();
+    /// ```
+    pub fn builder(url: &str) -> WeaviateClientBuilder {
+        WeaviateClientBuilder::new(url.into())
+    }
+}
+
+
+/// A `WeaviateClientBuilder` can be used to create a new `WeaviateClient`.
+#[derive(Default, Debug)]
+pub struct WeaviateClientBuilder {
+    pub base_url: String,
+    pub auth_secret: Option<AuthApiKey>,
+}
+
+impl WeaviateClientBuilder {
+    /// Construct a new `WeaviateClientBuilder`.
+    ///
+    /// This is the same as `WeaviateClient::builder()`.
+    pub fn new(base_url: &str) -> WeaviateClientBuilder {
+        WeaviateClientBuilder { base_url: base_url.into(), auth_secret: None }
+    }
+
+    /// Sets the authentication token to be used by the client.
+    ///
+    /// # Example
+    /// ```
+    /// use weaviate_community::WeaviateClientBuilder;
+    /// use weaviate_community::collections::auth::AuthApiKey;
+    ///
+    /// let auth = AuthApiKey::new("your-key");
+    /// let client = WeaviateClientBuilder::new("http://localhost:8080")
+    ///     .auth_secret(auth)
+    ///     .build();
+    /// ```
+    pub fn auth_secret(mut self, auth_secret: AuthApiKey) -> WeaviateClientBuilder {
+        self.auth_secret = Some(auth_secret);
+        self
+    }
+
+    /// Build a `WeaviateClient` from the values set in the WeaviateClientBuilder.
+    pub fn build(self) -> Result<WeaviateClient, Box<dyn Error>> {
+        let client = WeaviateClient::new(&self.base_url, self.auth_secret)?;
+        Ok(client)
     }
 }
 
@@ -124,7 +250,10 @@ mod tests {
     /// Test that the is_live endpoint returns true when it is expected to.
     #[tokio::test]
     async fn test_is_live_true() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::builder("http://localhost:8080")
+            .auth_secret(auth)
+            .build().unwrap();
         let res = client.is_live().await;
         assert!(res.unwrap())
     }
@@ -132,14 +261,16 @@ mod tests {
     /// Test that the is_live endpoint returns false when it is expected to.
     #[tokio::test]
     async fn test_is_live_false() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::builder("http://localhost:8080")
+            .build().unwrap();
         let _res = client.is_live().await;
     }
 
     /// Test that the is_ready endpoint returns true when it is expected to.
     #[tokio::test]
     async fn test_is_ready_true() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::builder("http://localhost:8080")
+            .build().unwrap();
         let res = client.is_ready().await;
         assert!(res.unwrap())
     }
@@ -147,7 +278,8 @@ mod tests {
     /// Test that the is_ready endpoint returns false when it is expected to.
     #[tokio::test]
     async fn test_is_ready_false() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let client = WeaviateClient::builder("http://localhost:8080")
+            .build().unwrap();
         let _res = client.is_ready().await;
     }
 }

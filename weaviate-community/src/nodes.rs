@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 /// All nodes related endpoints and functionality described in
 /// [Weaviate nodes API documentation](https://weaviate.io/developers/weaviate/api/rest/nodes)
+#[derive(Debug)]
 pub struct Nodes {
     /// The full URL to the Meta endpoint
     endpoint: Url,
@@ -47,10 +48,11 @@ impl Nodes {
     /// use weaviate_community::WeaviateClient;
     ///
     /// #[tokio::main]
-    /// async fn main() {
-    ///     let client = WeaviateClient::new("http://localhost:8080").unwrap();
-    ///     let res = client.nodes.get_nodes_status().await;
-    ///     println!("{:#?}", res.unwrap().json::<serde_json::Value>().await);
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>>{
+    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
+    ///     let res = client.nodes.get_nodes_status().await?;
+    ///     println!("{:#?}", res.json::<serde_json::Value>().await);
+    ///     Ok(())
     /// }
     /// ```
     pub async fn get_nodes_status(&self) -> Result<Response, Box<dyn Error>> {
@@ -61,11 +63,12 @@ impl Nodes {
 
 #[cfg(test)]
 mod tests {
-    use crate::WeaviateClient;
+    use crate::{WeaviateClient, AuthApiKey};
 
     #[tokio::test]
     async fn test_get_nodes_status() {
-        let client = WeaviateClient::new("http://localhost:8080").unwrap();
+        let auth = AuthApiKey::new("test-key");
+        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
         let res = client.nodes.get_nodes_status().await;
         let nodes = res.unwrap().json::<serde_json::Value>().await.unwrap();
         assert_eq!("weaviate1", nodes["nodes"][0]["name"]);
