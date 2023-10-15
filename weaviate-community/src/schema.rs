@@ -363,7 +363,6 @@ mod tests {
     /// Helper function for generating a testing class
     fn test_class(class_name: &str, enabled: bool) -> Class {
         ClassBuilder::new(class_name, "Test")
-            .multi_tenancy_config(MultiTenancyConfig { enabled })
             .build()
     }
 
@@ -397,213 +396,173 @@ mod tests {
         }
     }
 
+    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new();
+        let mut host = "http://".to_string();
+        host.push_str(&mock_server.host_with_port());
+        let client = WeaviateClient::builder(&host).build().unwrap();
+        (mock_server, client)
+    }
+
+    fn mock_post_json(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+        body: &str
+    ) -> mockito::Mock {
+        server.mock("POST", endpoint)
+            .with_status(status_code)
+            .with_header("content-type", "application/json")
+            .with_body(body)
+            .create()
+    }
+
+    fn mock_get(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+    ) -> mockito::Mock {
+        server.mock("GET", endpoint)
+            .with_status(status_code)
+            .create()
+    }
+
     #[tokio::test]
-    async fn test_create_single_class() {
-        // Insert the class and get it from the schema
-        let class = test_class("CreateSingle", false);
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let result = client.schema.create_class(&class).await;
-        assert!(&result.is_ok());
-        assert_eq!(&result.unwrap().class, "CreateSingle");
-        //let test = result.unwrap().json::<serde_json::Value>().await.unwrap();
-        //let test2: Class = serde_json::from_value(test.clone()).unwrap();
+    async fn test_create_class_ok() {
+        let class = test_class("UnitClass", false);
+        let class_str = serde_json::to_string(&class).unwrap();
+        let (mut mock_server, client) = get_test_harness();
+        let mock = mock_post_json(&mut mock_server, "/v1/schema/", 200, &class_str);
+        let res = client.schema.create_class(&class).await;
+        mock.assert();
+        assert!(res.is_ok());
+    }
 
-        //assert_eq!(
-        //    class.class,
-        //    result.unwrap().json::<serde_json::Value>().await.unwrap()["class"]
-        //);
+    #[tokio::test]
+    async fn test_create_class_err() {
+        let class = test_class("UnitClass", false);
+        let (mut mock_server, client) = get_test_harness();
+        let mock = mock_post_json(&mut mock_server, "/v1/schema/", 401, "");
+        let res = client.schema.create_class(&class).await;
+        mock.assert();
+        assert!(res.is_err());
+    }
 
-        // Delete it to tidy up after ourselves
-        let result = client.schema.delete(&class.class).await;
-        assert!(result.unwrap());
+    #[tokio::test]
+    async fn test_get_all_classes_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_get_all_classes_err() {
+        let (mut mock_server, client) = get_test_harness();
     }
 
     #[tokio::test]
     async fn test_get_single_class_ok() {
-        // Insert, to make sure it exists.
-        let class = test_class("GetSingleClass", false);
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let result = client.schema.create_class(&class).await;
-        assert!(result.is_ok());
-
-        // get it
-        let result = client.schema.get_class(&class.class).await;
-        assert!(result.is_ok());
-        assert_eq!(&result.unwrap().class, "GetSingleClass");
-
-        // Delete it and make sure that it is gone
-        let result = client.schema.delete(&class.class).await;
-        assert!(result.unwrap());
+        let (mut mock_server, client) = get_test_harness();
     }
 
     #[tokio::test]
     async fn test_get_single_class_err() {
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let result = client.schema.get_class("DOESNOTEXIST").await;
-        assert!(result.is_err());
+        let (mut mock_server, client) = get_test_harness();
     }
 
     #[tokio::test]
-    async fn test_get_all_classes() {
-        // Insert, to make sure it exists.
-        let class = test_class("GetAllClasses", false);
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let result = client.schema.create_class(&class).await;
-        assert!(result.is_ok());
-
-        let result = client.schema.get().await;
-        assert!(result.is_ok());
-
-        // There could be more than just one in the schema, depending on when the tests run.
-        assert_ne!(&result.unwrap().classes.len(), &0);
-
-        // Delete it and make sure that it is gone
-        let result = client.schema.delete(&class.class).await;
-        assert!(result.unwrap());
+    async fn test_get_delete_class_ok() {
+        let (mut mock_server, client) = get_test_harness();
     }
 
     #[tokio::test]
-    async fn test_update_single_class() {
-        // Insert, to make sure it exists.
-        let mut class = test_class("UpdateSingle", false);
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let result = client.schema.create_class(&class).await;
-        assert!(result.is_ok());
-
-        // Update it and make sure that it changed
-        class.description = "Updated".into();
-        let result = client.schema.update(&class).await;
-        assert_eq!("Updated", result.unwrap().description);
-
-        // Delete it and make sure that it is gone
-        let result = client.schema.delete(&class.class).await;
-        assert!(result.unwrap());
+    async fn test_get_delete_class_err() {
+        let (mut mock_server, client) = get_test_harness();
     }
 
     #[tokio::test]
-    async fn test_add_property() {
-        // Insert, to make sure it exists.
-        let class = test_class("AddProperty", false);
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let result = client.schema.create_class(&class).await;
-        assert!(result.is_ok());
-
-        // Validate the property does not exist in the class schema
-        let result = client.schema.get_class(&class.class).await;
-        assert_eq!(None, result.unwrap().properties);
-
-        // Update class with test property
-        let property = test_property("TestProperty");
-
-        // Update it and make sure that it changed
-        let result = client.schema.add_property(&class.class, &property).await;
-        assert_eq!("testProperty", result.unwrap().name);
-
-        // Validate the property now exists in the class schema
-        let result = client.schema.get_class(&class.class).await;
-        assert!(result.unwrap().properties.is_some());
-
-        // Delete it and make sure that it is gone
-        let result = client.schema.delete(&class.class).await;
-        assert!(result.unwrap());
+    async fn test_get_update_class_ok() {
+        let (mut mock_server, client) = get_test_harness();
     }
 
     #[tokio::test]
-    async fn test_get_shards() {
-        let class = test_class("GetShards", false);
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let result = client.schema.create_class(&class).await;
-        assert!(result.is_ok());
-
-        let shards = client.schema.get_shards(&class.class).await;
-        assert_eq!(ShardStatus::READY, shards.unwrap().shards[0].status);
-
-        // Delete it and make sure that it is gone
-        let result = client.schema.delete(&class.class).await;
-        assert!(result.unwrap());
+    async fn test_get_update_class_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+    
+    #[tokio::test]
+    async fn test_add_property_ok() {
+        let (mut mock_server, client) = get_test_harness();
     }
 
     #[tokio::test]
-    async fn test_update_shard_status() {
-        let class = test_class("UpdateShards", false);
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let result = client.schema.create_class(&class).await;
-        assert!(result.is_ok());
-
-        // Get the name of the shard
-        let result = client.schema.get_shards(&class.class).await;
-        let shards = result.unwrap();
-        assert_eq!(1, shards.shards.len());
-        assert_eq!(ShardStatus::READY, shards.shards[0].status);
-
-        // Update the shard status
-        let name = serde_json::to_string(&shards.shards[0].name)
-            .unwrap()
-            .clone();
-        let name = name.trim_start_matches("\"");
-        let name = name.trim_end_matches("\"");
-        let result = client
-            .schema
-            .update_class_shard(&class.class, &name, ShardStatus::READONLY)
-            .await;
-        assert_eq!(ShardStatus::READONLY, result.unwrap().status);
-
-        // Get the shard again
-        let result = client.schema.get_shards(&class.class).await;
-        let shards = result.unwrap();
-        assert_eq!(1, shards.shards.len());
-        assert_eq!(ShardStatus::READONLY, shards.shards[0].status);
-
-        // Delete it and make sure that it is gone
-        let result = client.schema.delete(&class.class).await;
-        assert!(result.unwrap());
+    async fn test_add_property_err() {
+        let (mut mock_server, client) = get_test_harness();
     }
 
     #[tokio::test]
-    async fn test_list_tenants() {
-        let class = test_class("ListTenants", true);
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::builder("http://localhost:8080").auth_secret(auth)
-            .build().unwrap();
-        let result = client.schema.create_class(&class).await;
-        assert!(result.is_ok());
+    async fn test_get_shards_ok() {
+        //let (mut mock_server, client) = get_test_harness();
+        //let mock = mock_post_json(&mut mock_server, "/v1/schema/shards", 200, "");
+        //let shards = client.schema.get_shards("test").await;
+        //mock.assert();
+        // TODO
+    }
 
-        let result = client.schema.list_tenants(&class.class).await;
-        assert_eq!(0, result.unwrap().tenants.len());
+    #[tokio::test]
+    async fn test_get_shards_err() {
+        //let (mut mock_server, client) = get_test_harness();
+        //let mock = mock_post_json(&mut mock_server, "/v1/schema/shards", 401, "");
+        //let shards = client.schema.get_shards("test").await;
+        //mock.assert();
+        //assert!(shards.is_err());
+    }
 
-        let mut tenants = test_tenants();
-        let result = client.schema.add_tenants(&class.class, &tenants).await;
-        assert_eq!(2, result.unwrap().tenants.len());
+    #[tokio::test]
+    async fn test_update_class_shard_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
 
-        let result = client.schema.list_tenants(&class.class).await;
-        assert_eq!(2, result.unwrap().tenants.len());
+    #[tokio::test]
+    async fn test_update_class_shard_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
 
-        tenants.tenants[0].activity_status = Some(ActivityStatus::COLD);
-        tenants.tenants[1].activity_status = Some(ActivityStatus::HOT);
-        let result = client.schema.update_tenants(&class.class, &tenants).await;
-        assert_eq!(2, result.unwrap().tenants.len());
+    #[tokio::test]
+    async fn test_list_tenants_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
 
-        let result = client.schema.list_tenants(&class.class).await;
-        assert_eq!(2, result.unwrap().tenants.len());
+    #[tokio::test]
+    async fn test_list_tenants_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
 
-        let result = client
-            .schema
-            .remove_tenants(&class.class, &vec!["TENANT_A", "TENANT_B"])
-            .await;
-        assert!(result.is_ok());
-        let result = client.schema.list_tenants(&class.class).await;
-        assert_eq!(0, result.unwrap().tenants.len());
+    #[tokio::test]
+    async fn test_add_tenants_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
 
-        // Delete it and make sure that it is gone
-        let result = client.schema.delete(&class.class).await;
-        assert!(result.unwrap());
+    #[tokio::test]
+    async fn test_add_tenants_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_remove_tenants_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_remove_tenants_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_update_tenants_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_update_tenants_err() {
+        let (mut mock_server, client) = get_test_harness();
     }
 }

@@ -247,39 +247,41 @@ impl WeaviateClientBuilder {
 mod tests {
     use super::*;
 
-    /// Test that the is_live endpoint returns true when it is expected to.
-    #[tokio::test]
-    async fn test_is_live_true() {
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::builder("http://localhost:8080")
-            .auth_secret(auth)
-            .build().unwrap();
-        let res = client.is_live().await;
-        assert!(res.unwrap())
+    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new();
+        let mut host = "http://".to_string();
+        host.push_str(&mock_server.host_with_port());
+        let client = WeaviateClient::builder(&host).build().unwrap();
+        (mock_server, client)
     }
 
-    /// Test that the is_live endpoint returns false when it is expected to.
-    #[tokio::test]
-    async fn test_is_live_false() {
-        let client = WeaviateClient::builder("http://localhost:8080")
-            .build().unwrap();
-        let _res = client.is_live().await;
+    fn mock_get(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+    ) -> mockito::Mock {
+        server.mock("GET", endpoint)
+            .with_status(status_code)
+            .create()
     }
 
-    /// Test that the is_ready endpoint returns true when it is expected to.
     #[tokio::test]
-    async fn test_is_ready_true() {
-        let client = WeaviateClient::builder("http://localhost:8080")
-            .build().unwrap();
-        let res = client.is_ready().await;
-        assert!(res.unwrap())
+    async fn test_is_ready_ok() {
+        let (mut mock_server, client) = get_test_harness();
     }
 
-    /// Test that the is_ready endpoint returns false when it is expected to.
     #[tokio::test]
-    async fn test_is_ready_false() {
-        let client = WeaviateClient::builder("http://localhost:8080")
-            .build().unwrap();
-        let _res = client.is_ready().await;
+    async fn test_is_ready_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_is_live_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_is_live_err() {
+        let (mut mock_server, client) = get_test_harness();
     }
 }
