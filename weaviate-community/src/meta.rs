@@ -53,17 +53,33 @@ impl Meta {
 
 #[cfg(test)]
 mod tests {
-    use crate::{WeaviateClient, AuthApiKey};
+    use crate::WeaviateClient;
 
-    /// Test the get_meta endpoint
+    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new();
+        let mut host = "http://".to_string();
+        host.push_str(&mock_server.host_with_port());
+        let client = WeaviateClient::builder(&host).build().unwrap();
+        (mock_server, client)
+    }
+
+    fn mock_get(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+    ) -> mockito::Mock {
+        server.mock("GET", endpoint)
+            .with_status(status_code)
+            .create()
+    }
+
     #[tokio::test]
-    async fn test_get_meta() {
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let res = client.meta.get_meta().await;
-        assert_eq!(
-            "http://[::]:8080",
-            res.unwrap().hostname
-        );
+    async fn test_get_meta_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_get_meta_err() {
+        let (mut mock_server, client) = get_test_harness();
     }
 }

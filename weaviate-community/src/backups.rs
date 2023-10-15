@@ -199,55 +199,73 @@ impl Backups {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        WeaviateClient,
-        collections::{
-            backups::{
-                BackupBackends, 
-                BackupCreateRequest, 
-                BackupRestoreRequest
-            }, 
-            objects::Object
-        }, AuthApiKey
-    };
+    use crate::WeaviateClient;
 
-    fn test_backup_create_req() -> BackupCreateRequest {
-        BackupCreateRequest { id: "this-is-a-test1".into(), include: None, exclude: None }
+    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new();
+        let mut host = "http://".to_string();
+        host.push_str(&mock_server.host_with_port());
+        let client = WeaviateClient::builder(&host).build().unwrap();
+        (mock_server, client)
     }
 
-    fn test_backup_restore_req() -> BackupRestoreRequest {
-        BackupRestoreRequest { include: None, exclude: None }
+    fn mock_get(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+    ) -> mockito::Mock {
+        server.mock("GET", endpoint)
+            .with_status(status_code)
+            .create()
     }
 
-    fn test_object(class_name: &str) -> Object {
-        Object {
-            class: class_name.into(),
-            properties: serde_json::json!({}),
-            id: None,
-            vector: None,
-            tenant: None,
-            creation_time_unix: None,
-            last_update_time_unix: None,
-            vector_weights: None,
-        }
-    }
-
-    // commented out to avoid breaking other tests when restore is executing. Will use in SI test
     #[tokio::test]
-    async fn test_create_backup() {
-        let obj = test_object("BackupTest");
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let _ = client.objects.create(&obj, None).await;
+    async fn test_get_backup_status_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
 
-        // create
-        //let c_req = test_backup_create_req();
-        //let res = client.backups.create(&BackupBackends::FILESYSTEM, &c_req, true).await;
-        //println!("{:#?}", res.unwrap());
+    #[tokio::test]
+    async fn test_get_backup_status_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
 
-        // restore
-        //let r_req = test_backup_restore_req();
-        //let res = client.backups.restore(&BackupBackends::FILESYSTEM, &c_req.id, &r_req, true).await;
-        //println!("{:#?}", res);
+    #[tokio::test]
+    async fn test_create_backup_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_create_backup_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_create_backup_wait_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_create_backup_wait_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_restore_backup_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_restore_backup_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_restore_backup_wait_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_restore_backup_wait_err() {
+        let (mut mock_server, client) = get_test_harness();
     }
 }

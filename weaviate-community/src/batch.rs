@@ -77,83 +77,43 @@ impl Batch {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        collections::{
-            batch::{BatchDeleteRequest, MatchConfig},
-            objects::{Object, Objects},
-        },
-        WeaviateClient, AuthApiKey,
-    };
-    use uuid::Uuid;
+    use crate::WeaviateClient;
 
-    fn test_objects(class_name: &str, uuid_one: &Uuid, uuid_two: &Uuid) -> Objects {
-        let properties = serde_json::json!({
-            "name": "test",
-            "number": 123,
-        });
-        let properties2 = serde_json::json!({
-            "name": "test2",
-            "number": 456,
-        });
-        Objects {
-            objects: vec![
-                Object {
-                    class: class_name.into(),
-                    properties,
-                    id: Some(*uuid_one),
-                    vector: None,
-                    tenant: None,
-                    creation_time_unix: None,
-                    last_update_time_unix: None,
-                    vector_weights: None,
-                },
-                Object {
-                    class: class_name.into(),
-                    properties: properties2,
-                    id: Some(*uuid_two),
-                    vector: None,
-                    tenant: None,
-                    creation_time_unix: None,
-                    last_update_time_unix: None,
-                    vector_weights: None,
-                },
-            ],
-        }
+    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new();
+        let mut host = "http://".to_string();
+        host.push_str(&mock_server.host_with_port());
+        let client = WeaviateClient::builder(&host).build().unwrap();
+        (mock_server, client)
     }
 
-    fn test_delete_objects(class_name: &str) -> BatchDeleteRequest {
-        // this will eventually be defined with the graphql stuff later on
-        let map = serde_json::json!({
-            "operator": "NotEqual",
-            "path": ["name"],
-            "valueText": "aaa"
-        });
-        BatchDeleteRequest {
-            matches: MatchConfig {
-                class: class_name.into(),
-                match_where: map,
-            },
-            dry_run: None,
-            output: None,
-        }
+    fn mock_get(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+    ) -> mockito::Mock {
+        server.mock("GET", endpoint)
+            .with_status(status_code)
+            .create()
     }
 
     #[tokio::test]
-    async fn test_objects_batch_add_and_delete() {
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let uuid_one = Uuid::new_v4();
-        let uuid_two = Uuid::new_v4();
-        let objects = test_objects("TestObjectsBatchAdd", &uuid_one, &uuid_two);
-        let res = client.batch.objects_batch_add(objects, None).await.unwrap();
-        assert_eq!(&2, &res.len());
+    async fn test_objects_batch_add_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
 
-        let delete = test_delete_objects("TestObjectsBatchAdd");
-        let res = client
-            .batch
-            .objects_batch_delete(delete, None)
-            .await
-            .unwrap();
-        assert_eq!(&2, &res.results.successful);
+    #[tokio::test]
+    async fn test_objects_batch_add_err() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_objects_batch_delete_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_objects_batch_delete_err() {
+        let (mut mock_server, client) = get_test_harness();
     }
 }

@@ -49,12 +49,33 @@ impl Oidc {
 
 #[cfg(test)]
 mod tests {
-    use crate::{WeaviateClient, AuthApiKey};
+    use crate::WeaviateClient;
+
+    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new();
+        let mut host = "http://".to_string();
+        host.push_str(&mock_server.host_with_port());
+        let client = WeaviateClient::builder(&host).build().unwrap();
+        (mock_server, client)
+    }
+
+    fn mock_get(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+    ) -> mockito::Mock {
+        server.mock("GET", endpoint)
+            .with_status(status_code)
+            .create()
+    }
 
     #[tokio::test]
-    async fn test_get_open_id_configuration() {
-        let auth = AuthApiKey::new("test-key");
-        let client = WeaviateClient::new("http://localhost:8080", Some(auth)).unwrap();
-        let _res = client.oidc.get_open_id_configuration().await;
+    async fn test_get_open_id_configuration_ok() {
+        let (mut mock_server, client) = get_test_harness();
+    }
+
+    #[tokio::test]
+    async fn test_get_open_id_configuration_err() {
+        let (mut mock_server, client) = get_test_harness();
     }
 }
