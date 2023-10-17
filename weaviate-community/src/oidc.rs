@@ -39,9 +39,9 @@ impl Oidc {
                 Ok(parsed)
             }
             _ => {
-                return Err(Box::new(NotConfiguredError(
+                Err(Box::new(NotConfiguredError(
                     "OIDC is not configured or is unavailable".into(),
-                )));
+                )))
             }
         }
     }
@@ -49,7 +49,17 @@ impl Oidc {
 
 #[cfg(test)]
 mod tests {
-    use crate::WeaviateClient;
+    use crate::{WeaviateClient, collections::oidc::OidcResponse};
+
+    fn test_oidc_response() -> OidcResponse {
+        let response: OidcResponse = serde_json::from_value(
+            serde_json::json!({
+                "clientId": "wcs",
+                "href": "https://auth.wcs.api.weaviate.io/auth/realms/SeMI/.well-known/openid-configuration"
+            })
+        ).unwrap();
+        response
+    }
 
     fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
         let mock_server = mockito::Server::new();
@@ -63,19 +73,33 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
+        body: &str
     ) -> mockito::Mock {
         server.mock("GET", endpoint)
             .with_status(status_code)
+            .with_header("content-type", "application/json")
+            .with_body(body)
             .create()
     }
 
     #[tokio::test]
     async fn test_get_open_id_configuration_ok() {
+        let resp = test_oidc_response();
+        let resp_str = serde_json::to_string(&resp).unwrap();
         let (mut mock_server, client) = get_test_harness();
+        let mock = mock_get(&mut mock_server, "/openid-configuration", 200, &resp_str);
+        let res = client.oidc.get_open_id_configuration().await;
+        mock.assert();
+        assert!(res.is_ok());
+        assert_eq!(resp.client_id, res.unwrap().client_id);
     }
 
     #[tokio::test]
     async fn test_get_open_id_configuration_err() {
         let (mut mock_server, client) = get_test_harness();
+        let mock = mock_get(&mut mock_server, "/openid-configuration", 404, "");
+        let res = client.oidc.get_open_id_configuration().await;
+        mock.assert();
+        assert!(res.is_err());
     }
 }

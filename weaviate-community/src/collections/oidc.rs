@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// endpoint when deserialized.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OidcResponse {
-    href: String,
-    #[serde(rename = "cliendID")]
-    cliend_id: String,
+    pub href: String,
+    #[serde(rename = "clientId")]
+    pub client_id: String,
 }
