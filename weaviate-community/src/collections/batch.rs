@@ -72,7 +72,7 @@ pub enum GeneralStatus {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ResultStatus {
-    status: GeneralStatus,
+    pub status: GeneralStatus,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
