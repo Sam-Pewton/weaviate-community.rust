@@ -63,3 +63,15 @@ impl Display for BackupError {
         write!(f, "BackupError: {}", self.0)
     }
 }
+
+/// Custom GraphQL, used when there was a mismatch in expected query parameters for endpoints.
+#[derive(Debug)]
+pub struct GraphQLError(pub String);
+
+impl Error for GraphQLError {}
+
+impl Display for GraphQLError {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "Error executing GraphQL query: {}", self.0)
+    }
+}

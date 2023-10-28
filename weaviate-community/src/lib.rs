@@ -12,6 +12,7 @@ mod nodes;
 mod objects;
 mod oidc;
 mod schema;
+mod query;
 pub use self::backups::Backups;
 pub use self::batch::Batch;
 pub use self::classification::_Classification;
@@ -21,6 +22,7 @@ pub use self::nodes::Nodes;
 pub use self::objects::Objects;
 pub use self::oidc::Oidc;
 pub use self::schema::Schema;
+pub use self::query::Query;
 use std::sync::Arc;
 
 use collections::auth::AuthApiKey;
@@ -43,6 +45,7 @@ pub struct WeaviateClient {
     pub nodes: Nodes,
     pub oidc: Oidc,
     pub modules: _Modules,
+    pub query: Query,
 }
 
 impl WeaviateClient {
@@ -85,6 +88,7 @@ impl WeaviateClient {
         let nodes = Nodes::new(&base, Arc::clone(&client))?;
         let oidc = Oidc::new(&base, Arc::clone(&client))?;
         let modules = _Modules::new(&base, Arc::clone(&client))?;
+        let query = Query::new(&base, Arc::clone(&client))?;
 
         Ok(WeaviateClient {
             base_url: base,
@@ -98,6 +102,7 @@ impl WeaviateClient {
             nodes,
             oidc,
             modules,
+            query,
         })
     }
 

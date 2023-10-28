@@ -44,7 +44,7 @@ impl Nodes {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// use weaviate_community::WeaviateClient;
     ///
     /// #[tokio::main]

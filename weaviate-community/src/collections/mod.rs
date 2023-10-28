@@ -6,3 +6,4 @@ pub mod meta;
 pub mod objects;
 pub mod oidc;
 pub mod schema;
+pub mod query;

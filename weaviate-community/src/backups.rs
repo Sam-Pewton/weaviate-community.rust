@@ -96,6 +96,7 @@ impl Backups {
     ///     let res = client.backups.get_backup_status(
     ///         &BackupBackends::FILESYSTEM,
     ///         "doc-test-backup",
+    ///         true
     ///     ).await?;
     ///     println!("{:#?}", res);
     ///     Ok(())
