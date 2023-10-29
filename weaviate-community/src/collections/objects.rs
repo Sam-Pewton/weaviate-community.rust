@@ -80,7 +80,7 @@ pub struct Object {
 
 /// Wrapper for multiple objects.
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Objects {
+pub struct MultiObjects {
     pub objects: Vec<Object>,
 }
 
