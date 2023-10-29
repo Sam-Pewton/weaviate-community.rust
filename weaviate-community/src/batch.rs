@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::collections::{
     batch::{BatchAddObject, BatchDeleteRequest, BatchDeleteResponse},
     error::BatchError,
-    objects::{ConsistencyLevel, Objects},
+    objects::{ConsistencyLevel, MultiObjects},
 };
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ impl Batch {
 
     pub async fn objects_batch_add(
         &self,
-        objects: Objects,
+        objects: MultiObjects,
         consistency_level: Option<ConsistencyLevel>,
     ) -> Result<Vec<BatchAddObject>, Box<dyn Error>> {
         let mut endpoint = self.endpoint.join("objects")?;
@@ -91,7 +91,7 @@ mod tests {
             GeneralStatus
         },
         collections::objects::{
-            Objects,
+            MultiObjects,
             Object,
         }
     };
@@ -104,12 +104,12 @@ mod tests {
         (mock_server, client)
     }
 
-    fn test_create_objects() -> Objects {
+    fn test_create_objects() -> MultiObjects {
         let properties = serde_json::json!({
             "name": "test",
             "number": 123,
         });
-        Objects {
+        MultiObjects {
             objects: vec![
                 Object {
                     class: "Test".into(),
