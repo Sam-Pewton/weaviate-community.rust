@@ -6,7 +6,6 @@ use uuid::Uuid;
 
 /// All objects endpoints and functionality described in
 /// [Weaviate objects API documentation](https://weaviate.io/developers/weaviate/api/rest/objects)
-///
 #[derive(Debug)]
 pub struct Objects {
     endpoint: Url,
@@ -80,28 +79,36 @@ impl Objects {
                 .append_pair("offset", &o.to_string());
             // Raise an err if after is some
             if after.is_some() {
-                return Err(Box::new(QueryError(
-                            "'after' must be None when 'offset' is Some".into(),
-                            )));
+                return Err(
+                    Box::new(QueryError(
+                        "'after' must be None when 'offset' is Some".into(),
+                    ))
+                );
             }
         }
         if let Some(a) = after {
             endpoint.query_pairs_mut().append_pair("after", a);
             if after.is_none() {
-                return Err(Box::new(QueryError(
-                            "'class' must be Some when 'after' is Some".into(),
-                            )));
+                return Err(
+                    Box::new(QueryError(
+                        "'class' must be Some when 'after' is Some".into(),
+                    ))
+                );
             }
             // raise an error if offset or sort are some
             if offset.is_some() {
-                return Err(Box::new(QueryError(
-                            "'offset' must be None when 'after' is Some".into(),
-                            )));
+                return Err(
+                    Box::new(QueryError(
+                        "'offset' must be None when 'after' is Some".into(),
+                    ))
+                );
             }
             if sort.is_some() {
-                return Err(Box::new(QueryError(
-                            "'sort' must be None when 'after' is Some".into(),
-                            )));
+                return Err(
+                    Box::new(QueryError(
+                        "'sort' must be None when 'after' is Some".into(),
+                    ))
+                );
             }
         }
         if let Some(i) = include {
@@ -121,10 +128,15 @@ impl Objects {
                 let res: MultiObjects = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(QueryError(format!(
-                            "status code {} received when calling get class endpoint.",
-                            res.status()
-                            )))),
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling list objects endpoint.",
+                        res.status()
+                        )
+                    )
+                )
+            ),
         }
     }
 
@@ -180,10 +192,14 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling create class endpoint.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling create object endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
         }
     }
 
@@ -236,10 +252,14 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling get class endpoint.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling get object endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
         }
     }
 
@@ -288,10 +308,14 @@ impl Objects {
             reqwest::StatusCode::NO_CONTENT => {
                 Ok(true)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling exists (class) endpoint.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling exists (object) endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
         }
     }
 
@@ -341,10 +365,14 @@ impl Objects {
             reqwest::StatusCode::NO_CONTENT => {
                 Ok(true)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling update class endpoint.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling update object endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
         }
     }
 
@@ -403,10 +431,14 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling update class endpoint.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling update class endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
         }
     }
 
@@ -454,10 +486,14 @@ impl Objects {
             reqwest::StatusCode::NO_CONTENT => {
                 Ok(true)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling update class endpoint.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling delete object endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
         }
     }
 
@@ -497,10 +533,14 @@ impl Objects {
             reqwest::StatusCode::OK => {
                 Ok(true)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling update class endpoint.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling validate object endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
         }
     }
 
@@ -511,6 +551,27 @@ impl Objects {
     ///
     /// # Example
     /// ```
+    /// use uuid::Uuid;
+    /// use weaviate_community::WeaviateClient;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    ///     let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    ///
+    ///     let res = client.objects.reference_add(
+    ///         "JeopardyQuestion", 
+    ///         &uuid1,
+    ///         "hasCategory", 
+    ///         "JeopardyCategory",
+    ///         &uuid2,
+    ///         None,
+    ///         None
+    ///     ).await;
+    ///
+    ///     Ok(())
+    /// }
     /// ```
     pub async fn reference_add(
         &self,
@@ -521,7 +582,7 @@ impl Objects {
         to_uuid: &Uuid,
         consistency_level: Option<ConsistencyLevel>,
         tenant_name: Option<&str>,
-    ) -> Result<reqwest::Response, Box<dyn Error>> {
+    ) -> Result<bool, Box<dyn Error>> {
         let payload = serde_json::json!({
             "beacon": format!("weaviate://localhost/{}/{}", to_class_name, to_uuid),
         });
@@ -540,16 +601,51 @@ impl Objects {
             // multi tenancy must be enabled first
             endpoint.query_pairs_mut().append_pair("tenant", t);
         }
-        println!("{:?}", payload);
+
         let res = self.client.post(endpoint).json(&payload).send().await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                Ok(true)
+            }
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling create object reference endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
+        }
     }
 
     /// Update all references in a specified property of an object specified by its class name and 
     /// id.
     ///
+    /// Requires the same length of to_class_names as to_uuids as input.
+    ///
     /// # Example
     /// ```
+    /// use uuid::Uuid;
+    /// use weaviate_community::WeaviateClient;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    ///     let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    ///
+    ///     let res = client.objects.reference_update(
+    ///         "JeopardyQuestion", 
+    ///         &uuid1,
+    ///         "hasCategory", 
+    ///         vec!["JeopardyCategory"],
+    ///         vec![&uuid2],
+    ///         None,
+    ///         None
+    ///     ).await;
+    ///
+    ///     Ok(())
+    /// }
     /// ```
     pub async fn reference_update(
         &self,
@@ -560,7 +656,15 @@ impl Objects {
         to_uuids: Vec<&Uuid>,
         consistency_level: Option<ConsistencyLevel>,
         tenant_name: Option<&str>,
-    ) -> Result<reqwest::Response, Box<dyn Error>> {
+    ) -> Result<Object, Box<dyn Error>> {
+
+        if to_class_names.len() != to_uuids.len() {
+            return Err(Box::new(QueryError(
+                "to_class_names.len() must equal to_uuids.len().".into()
+            )))
+        }
+
+        // Match the class names to the id's in the beacon format
         let mut beacons = Vec::new();
         for (class_name, id) in to_class_names.iter().zip(to_uuids.iter()) {
                 beacons.push(serde_json::json!({
@@ -568,8 +672,8 @@ impl Objects {
                 })
             );
         }
-
         let payload = serde_json::json!(beacons);
+
         let mut endpoint: String = from_class_name.into();
         endpoint.push_str("/");
         endpoint.push_str(&from_uuid.to_string());
@@ -585,10 +689,22 @@ impl Objects {
             // multi tenancy must be enabled first
             endpoint.query_pairs_mut().append_pair("tenant", t);
         }
-        println!("{:?}", payload);
 
         let res = self.client.put(endpoint).json(&payload).send().await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                let res: Object = res.json().await?;
+                Ok(res)
+            }
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling update object reference endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
+        }
     }
 
     /// Delete the single reference that is given in the body from the list of references that the
@@ -597,6 +713,27 @@ impl Objects {
     ///
     /// # Example
     /// ```
+    /// use uuid::Uuid;
+    /// use weaviate_community::WeaviateClient;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    ///     let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    ///
+    ///     let res = client.objects.reference_delete(
+    ///         "JeopardyQuestion", 
+    ///         &uuid1,
+    ///         "hasCategory", 
+    ///         "JeopardyCategory",
+    ///         &uuid2,
+    ///         None,
+    ///         None
+    ///     ).await;
+    ///
+    ///     Ok(())
+    /// }
     /// ```
     pub async fn reference_delete(
         &self,
@@ -607,7 +744,7 @@ impl Objects {
         to_uuid: &Uuid,
         consistency_level: Option<ConsistencyLevel>,
         tenant_name: Option<&str>,
-    ) -> Result<reqwest::Response, Box<dyn Error>> {
+    ) -> Result<bool, Box<dyn Error>> {
         let payload = serde_json::json!({
             "beacon": format!("weaviate://localhost/{}/{}", to_class_name, to_uuid),
         });
@@ -626,9 +763,21 @@ impl Objects {
             // multi tenancy must be enabled first
             endpoint.query_pairs_mut().append_pair("tenant", t);
         }
-        println!("{:?}", payload);
+
         let res = self.client.delete(endpoint).json(&payload).send().await?;
-        Ok(res)
+        match res.status() {
+            reqwest::StatusCode::NO_CONTENT => {
+                Ok(true)
+            }
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling delete class reference endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
+        }
     }
 }
 
@@ -636,7 +785,10 @@ impl Objects {
 mod tests {
     use uuid::Uuid;
 
-    use crate::{WeaviateClient, collections::{objects::{Object, ConsistencyLevel}, auth::AuthApiKey}};
+    use crate::{
+        WeaviateClient, 
+        collections::objects::Object
+    };
 
     fn test_object(class_name: &str, id: Option<Uuid>) -> Object {
         let properties = serde_json::json!({
@@ -675,54 +827,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_ok() {
-        //let (mut mock_server, client) = get_test_harness();
-
-        let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
-        let uuid = Uuid::parse_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303").unwrap();
-        let object = test_object("TestListObject", Some(uuid.clone()));
-        let res = client
-            .objects
-            .create(&object, Some(ConsistencyLevel::ALL))
-            .await;
-
-        println!("{:?}", res);
-
-        let properties = serde_json::json!({
-            "name": "test",
-            "number": 123,
-        });
-        let uuiid = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
-        let res = client.objects.validate("TestListObject", properties, &uuiid).await;
-
-        println!("{:?}", res);
-        //assert_eq!(200, res.unwrap().status());
-
-        let res = client
-            .objects
-            .list(
-                Some("TestListObject"),
-                Some(10),
-                None,
-                None,
-                None,
-                None,
-                None,
-                )
-            .await;
-
-        println!("{:?}", res);
-        //assert_eq!(
-        //    "TestListObject",
-        //    res.unwrap().json::<serde_json::Value>().await.unwrap()["objects"][0]["class"]
-        //);
-
-        let res = client
-            .objects
-            .delete("TestListObject", &uuid, None, None)
-            .await;
-
-
-        assert!(res.unwrap());
+        let (mut mock_server, client) = get_test_harness();
     }
 
     #[tokio::test]
