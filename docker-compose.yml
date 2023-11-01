@@ -22,9 +22,15 @@ services:
     environment:
       QUERY_DEFAULTS_LIMIT: 25
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
-      AUTHENTICATION_APIKEY_ENABLED: 'true'
-      AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'test-key'
-      AUTHENTICATION_APIKEY_USERS: 'test'
+        # AUTHENTICATION_APIKEY_ENABLED: 'true'
+        # AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'test-key'
+        # AUTHENTICATION_APIKEY_USERS: 'test'
+        # AUTHENTICATION_OIDC_ENABLED: 'true'
+        # AUTHENTICATION_OIDC_ISSUER: 'https://auth.wcs.api.weaviate.io/auth/realms/SeMI'
+        # AUTHENTICATION_OIDC_CLIENT_ID: 'wcs'
+        # AUTHENTICATION_OIDC_USERNAME_CLAIM: 'email'
+        # AUTHORIZATION_ADMINLIST_ENABLED: 'true'
+        # AUTHORIZATION_ADMINLIST_USERS: 's.pewton@outlook.com'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'none'
       ENABLE_MODULES: 'backup-filesystem'
