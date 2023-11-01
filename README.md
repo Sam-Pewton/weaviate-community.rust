@@ -1,8 +1,8 @@
 # Weaviate Community
 
 [![Crates.io][crates-badge]][crates-url]
-[![CircleCI][circleci-badge][circleci-url]
-[![License][license-badge][github-url]
+[![CircleCI][circleci-badge]][circleci-url]
+[![License][license-badge]][github-url]
 
 [license-badge]: https://img.shields.io/badge/license-MIT-green.svg
 [circleci-badge]: https://circleci.com/gh/Sam-Pewton/weaviate-community.rust.svg?style=shield
