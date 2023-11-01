@@ -1,12 +1,11 @@
 # Weaviate Community
 
-[![Crates.io][crates-badge]][crates-url]
+[![Crates.io]][crates-url]
 [![CircleCI][circleci-badge]][circleci-url]
 [![License][license-badge]][github-url]
 
 [license-badge]: https://img.shields.io/badge/license-MIT-green.svg
 [circleci-badge]: https://circleci.com/gh/Sam-Pewton/weaviate-community.rust.svg?style=shield
-[crates-badge]: https://img.shields.io/crates/v/tokio.svg
 [crates-url]: https://crates.io/crates/weaviate-community
 [circleci-url]: https://app.circleci.com/pipelines/github/Sam-Pewton/weaviate-community.rust
 [github-url]: https://github.com/Sam-Pewton/weaviate-community.rust
