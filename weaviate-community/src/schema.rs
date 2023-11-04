@@ -376,52 +376,30 @@ mod tests {
     fn test_classes() -> Classes {
         let class_a = test_class("Test1");
         let class_b = test_class("Test1");
-        Classes { classes: vec![class_a, class_b] }
+        Classes::new(vec![class_a, class_b])
     }
 
     fn test_shard() -> Shard {
-        Shard { name: "abcd".into(), status: ShardStatus::READY }
+        Shard::new("abcd", ShardStatus::READY)
     }
 
     /// Helper function for generating a testing property
     fn test_property(property_name: &str) -> Property {
-        Property {
-            name: property_name.into(),
-            data_type: vec!["boolean".into()],
-            description: Some("test property".into()),
-            index_filterable: None,
-            index_searchable: None,
-            module_config: None,
-            tokenization: None,
-            inverted_index_config: None,
-        }
+        Property::builder(property_name, vec!["boolean"]).with_description("test property").build()
     }
 
     /// Helper function for generating some test tenants, as shown on the weaviate API webpage.
     fn test_tenants() -> Tenants {
-        Tenants {
-            tenants: vec![
-                Tenant {
-                    name: "TENANT_A".into(),
-                    activity_status: None,
-                },
-                Tenant {
-                    name: "TENANT_B".into(),
-                    activity_status: Some(ActivityStatus::COLD),
-                },
+        Tenants::new(
+            vec![
+                Tenant::builder("TENANT_A").build(),
+                Tenant::builder("TENANT_B").with_activity_status(ActivityStatus::COLD).build()
             ],
-        }
+        )
     }
 
     fn test_shards() -> Shards {
-        Shards { 
-            shards: vec![
-                Shard {
-                    name: "1D3PBjtz9W7r".into(),
-                    status: ShardStatus::READY,
-                },
-            ]
-        }
+        Shards::new(vec![Shard::new("1D3PBjtz9W7r", ShardStatus::READY)])
     }
 
     fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
