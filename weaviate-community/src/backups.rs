@@ -231,11 +231,11 @@ mod tests {
     }
 
     fn test_create_backup_request() -> BackupCreateRequest {
-        BackupCreateRequest { id: "abcd".into(), include: None, exclude: None }
+        BackupCreateRequest::builder("abcd").build()
     }
 
     fn test_restore_backup_request() -> BackupRestoreRequest {
-        BackupRestoreRequest { include: None, exclude: None }
+        BackupRestoreRequest::builder().build() 
     }
 
     fn test_backup_response(status: BackupStatus) -> BackupResponse {
