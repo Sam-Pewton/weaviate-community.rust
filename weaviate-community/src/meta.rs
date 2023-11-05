@@ -53,7 +53,7 @@ impl Meta {
 
 #[cfg(test)]
 mod tests {
-    use crate::WeaviateClient;
+    use crate::{WeaviateClient, collections::meta::Metadata};
 
     fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
         let mock_server = mockito::Server::new();
@@ -63,23 +63,52 @@ mod tests {
         (mock_server, client)
     }
 
+    fn test_metadata() -> Metadata {
+        let data: Metadata = serde_json::from_value(serde_json::json!({
+            "hostname": "http://[::]:8080",
+            "modules": {
+                "text2vec-contextionary": {
+                  "version": "en0.16.0-v0.4.21",
+                  "wordCount": 818072
+                }
+            },
+            "version": "1.0.0"
+        })).unwrap();
+        data
+    }
+
     fn mock_get(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
+        body: &str
     ) -> mockito::Mock {
         server.mock("GET", endpoint)
             .with_status(status_code)
+            .with_header("content-type", "application/json")
+            .with_body(body)
             .create()
     }
 
     #[tokio::test]
     async fn test_get_meta_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let metadata = test_metadata();
+        let metadata_str = serde_json::to_string(&metadata).unwrap();
+        let mock = mock_get(&mut mock_server, "/v1/meta/", 200, &metadata_str);
+        let res = client.meta.get_meta().await;
+        mock.assert();
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap().hostname, metadata.hostname);
+        println!("{:#?}", metadata);
     }
 
     #[tokio::test]
     async fn test_get_meta_err() {
         let (mut mock_server, client) = get_test_harness();
+        let mock = mock_get(&mut mock_server, "/v1/meta/", 404, "");
+        let res = client.meta.get_meta().await;
+        mock.assert();
+        assert!(res.is_err());
     }
 }

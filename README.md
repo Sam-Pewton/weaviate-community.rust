@@ -352,7 +352,6 @@ async fn classification_endpoints(client: WeaviateClient) -> Result<(), Box<dyn 
 ```
 
 # Roadmap
-- Comprehensive unit test update
 - SI test update
 - CI/CD update
 - Classification endpoints
