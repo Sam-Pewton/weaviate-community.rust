@@ -53,7 +53,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     
     // With Auth key
     let client = WeaviateClient::builder("http://localhost:8080")
-        .auth_secret(Some(AuthApiKey::new("your-key")))
+        .with_auth_secret(AuthApiKey::new("your-key"))
         .build()?;
 
     Ok(())

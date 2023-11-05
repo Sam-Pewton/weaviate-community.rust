@@ -1,7 +1,7 @@
-//! # weaviate-client-community
+//! # weaviate-community
 //!
-//! The `weaviate-client-community` crate...
-//!
+//! Community client for handling Weaviate transactions written in Rust, for Rust. 
+//! More information on Weaviate can be found on the official Weaviate webpage.
 mod backups;
 mod batch;
 mod classification;
@@ -50,8 +50,13 @@ pub struct WeaviateClient {
 
 impl WeaviateClient {
     /// Construct a new `WeaviateClient`
+    /// 
+    /// # Parameters
+    /// - url: the root url for the client
+    /// - auth_client_secret: the API authentication key
     ///
     /// # Example
+    /// Using the WeaviateClient
     /// ```
     /// use weaviate_community::WeaviateClient;
     /// use weaviate_community::collections::auth::AuthApiKey;
@@ -60,6 +65,21 @@ impl WeaviateClient {
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///     let auth = AuthApiKey::new("test-key");
     ///     let client = WeaviateClient::new("http://localhost:8080", Some(auth))?;
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// Using the WeaviateClientBuilder
+    /// ```
+    /// use weaviate_community::WeaviateClient;
+    /// use weaviate_community::collections::auth::AuthApiKey;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let auth = AuthApiKey::new("test-key");
+    ///     let client = WeaviateClient::builder("http://localhost:8080")
+    ///         .with_auth_secret(auth)
+    ///         .build();
     ///     Ok(())
     /// }
     /// ```
@@ -130,7 +150,7 @@ impl WeaviateClient {
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///     let auth = AuthApiKey::new("test-key");
     ///     let client = WeaviateClient::builder("http://localhost:8080")
-    ///         .auth_secret(auth)
+    ///         .with_auth_secret(auth)
     ///         .build()?;
     ///     let res = client.is_live().await;
     ///     Ok(())
@@ -171,7 +191,7 @@ impl WeaviateClient {
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///     let auth = AuthApiKey::new("test-key");
     ///     let client = WeaviateClient::builder("http://localhost:8080")
-    ///         .auth_secret(auth)
+    ///         .with_auth_secret(auth)
     ///         .build()?;
     ///     let res = client.is_ready().await;
     ///     Ok(())
@@ -188,6 +208,9 @@ impl WeaviateClient {
 
     /// Builder for the WeaviateClient
     ///
+    /// # Parameters
+    /// - base_url: the root url for the client
+    ///
     /// # Examples
     /// Anonymous
     /// ```
@@ -201,7 +224,9 @@ impl WeaviateClient {
     /// use weaviate_community::collections::auth::AuthApiKey;
     ///
     /// let auth = AuthApiKey::new("your-key");
-    /// let client = WeaviateClient::builder("http://localhost:8080").auth_secret(auth).build();
+    /// let client = WeaviateClient::builder("http://localhost:8080")
+    ///     .with_auth_secret(auth)
+    ///     .build();
     /// ```
     pub fn builder(base_url: &str) -> WeaviateClientBuilder {
         WeaviateClientBuilder::new(base_url)
@@ -219,12 +244,36 @@ pub struct WeaviateClientBuilder {
 impl WeaviateClientBuilder {
     /// Construct a new `WeaviateClientBuilder`.
     ///
+    /// # Parameters
+    /// - base_url: the root url for the client
+    ///
     /// This is the same as `WeaviateClient::builder()`.
+    ///
+    /// # Examples
+    /// Anonymous
+    /// ```
+    /// use weaviate_community::WeaviateClientBuilder;
+    /// let client = WeaviateClientBuilder::new("http://localhost:8080").build();
+    /// ```
+    ///
+    /// Authenticated with API key
+    /// ```
+    /// use weaviate_community::WeaviateClientBuilder;
+    /// use weaviate_community::collections::auth::AuthApiKey;
+    ///
+    /// let auth = AuthApiKey::new("your-key");
+    /// let client = WeaviateClientBuilder::new("http://localhost:8080")
+    ///     .with_auth_secret(auth)
+    ///     .build();
+    /// ```
     pub fn new(base_url: &str) -> WeaviateClientBuilder {
         WeaviateClientBuilder { base_url: base_url.into(), auth_secret: None }
     }
 
     /// Sets the authentication token to be used by the client.
+    ///
+    /// # Parameters
+    /// - auth_secret: the AuthApiKey to set in the client
     ///
     /// # Example
     /// ```
@@ -233,15 +282,22 @@ impl WeaviateClientBuilder {
     ///
     /// let auth = AuthApiKey::new("your-key");
     /// let client = WeaviateClientBuilder::new("http://localhost:8080")
-    ///     .auth_secret(auth)
+    ///     .with_auth_secret(auth)
     ///     .build();
     /// ```
-    pub fn auth_secret(mut self, auth_secret: AuthApiKey) -> WeaviateClientBuilder {
+    pub fn with_auth_secret(mut self, auth_secret: AuthApiKey) -> WeaviateClientBuilder {
         self.auth_secret = Some(auth_secret);
         self
     }
 
     /// Build a `WeaviateClient` from the values set in the WeaviateClientBuilder.
+    ///
+    /// # Example
+    /// ```
+    /// use weaviate_community::WeaviateClientBuilder;
+    ///
+    /// let client = WeaviateClientBuilder::new("http://localhost:8080").build();
+    /// ```
     pub fn build(self) -> Result<WeaviateClient, Box<dyn Error>> {
         let client = WeaviateClient::new(&self.base_url, self.auth_secret)?;
         Ok(client)
@@ -264,29 +320,50 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
+        body: &str
     ) -> mockito::Mock {
         server.mock("GET", endpoint)
             .with_status(status_code)
+            .with_header("content-type", "application/json")
+            .with_body(body)
             .create()
     }
 
     #[tokio::test]
     async fn test_is_ready_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let mock = mock_get(&mut mock_server, "/v1/.well-known/ready", 200, "");
+        let res = client.is_ready().await;
+        mock.assert();
+        assert!(res.is_ok());
     }
 
     #[tokio::test]
     async fn test_is_ready_err() {
         let (mut mock_server, client) = get_test_harness();
+        let mock = mock_get(&mut mock_server, "/v1/.well-known/ready", 503, "");
+        let res = client.is_ready().await;
+        mock.assert();
+        assert!(res.is_ok());
+        assert_eq!(false, res.unwrap());
     }
 
     #[tokio::test]
     async fn test_is_live_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let mock = mock_get(&mut mock_server, "/v1/.well-known/live", 200, "");
+        let res = client.is_live().await;
+        mock.assert();
+        assert!(res.is_ok());
     }
 
     #[tokio::test]
     async fn test_is_live_err() {
         let (mut mock_server, client) = get_test_harness();
+        let mock = mock_get(&mut mock_server, "/v1/.well-known/live", 404, "");
+        let res = client.is_live().await;
+        mock.assert();
+        assert!(res.is_ok());
+        assert_eq!(false, res.unwrap());
     }
 }
