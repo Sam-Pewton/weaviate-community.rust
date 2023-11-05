@@ -312,18 +312,45 @@ async fn oidc_endpoint(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
 
 ## Querying
 ```rust
+use weaviate_community::collections::query::{
+    GetQuery,
+    AggregateQuery,
+    ExploreQuery,
+    RawQuery
+};
 async fn querying(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
     // Get
-    todo!();
+    let query = GetQuery::builder(
+        "JeopardyQuestion", 
+        vec![
+            "question",
+            "answer",
+            "points",
+            "hasCategory { ... on JeopardyCategory { title }}"
+        ])
+        .with_limit(1)
+        .with_additional(vec!["id"])
+        .build();
+    let res = client.query.get(query).await;
 
     // Aggregate
-    todo!();
+    let query = AggregateQuery::builder("Article")
+        .with_meta_count()
+        .with_fields(vec!["wordCount {count maximum mean median minimum mode sum type}"])
+        .build();
+    let res = client.query.aggregate(query).await;
 
     // Explore
-    todo!();
+    let query = ExploreQuery::builder()
+        .with_limit(1)
+        .with_near_vector("{vector: [-0.36840257,0.13973749,-0.28994447]}")
+        .with_fields(vec!["beacon", "className", "certainty"])
+        .build();
+    let res = client.query.explore(query).await;
 
     // Raw
-    todo!();
+    let query = RawQuery::new("{ Get { JeopardyQuestion { question answer points } } }");
+    let res = client.query.raw(query).await?;
 
     Ok(())
 }
