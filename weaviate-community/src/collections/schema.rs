@@ -147,7 +147,7 @@ impl ClassBuilder {
     ///     Property
     /// };
     ///
-    /// let properties = Properties(vec![Property::builder("title", vec!["text"]).build()]);
+    /// let properties = Properties::new(vec![Property::builder("title", vec!["text"]).build()]);
     /// let builder = ClassBuilder::new("Article", "Class for storing article data")
     ///     .with_properties(properties);
     /// ```
@@ -372,6 +372,26 @@ fn default_vector_index_type() -> Option<VectorIndexType> {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Properties(pub Vec<Property>);
+
+impl Properties {
+    /// Create a new Properties wrapper, to house multiple individual properties.
+    ///
+    /// # Parameters
+    /// - properties: the properties to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::schema::{
+    ///     Properties,
+    ///     Property
+    /// };
+    ///
+    /// let properties = Properties::new(vec![Property::builder("title", vec!["text"]).build()]);
+    /// ```
+    pub fn new(properties: Vec<Property>) -> Properties {
+        Properties(properties)
+    }
+}
 
 /// Configuration options for a property
 #[derive(Serialize, Deserialize, Debug, PartialEq)]

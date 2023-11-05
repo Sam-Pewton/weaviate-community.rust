@@ -3,7 +3,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use crate::collections::{
-    batch::{BatchAddObject, BatchDeleteRequest, BatchDeleteResponse},
+    batch::{BatchAddObjects, BatchDeleteRequest, BatchDeleteResponse},
     error::BatchError,
     objects::{ConsistencyLevel, MultiObjects},
 };
@@ -24,7 +24,7 @@ impl Batch {
         &self,
         objects: MultiObjects,
         consistency_level: Option<ConsistencyLevel>,
-    ) -> Result<Vec<BatchAddObject>, Box<dyn Error>> {
+    ) -> Result<BatchAddObjects, Box<dyn Error>> {
         let mut endpoint = self.endpoint.join("objects")?;
         if let Some(x) = consistency_level {
             endpoint
@@ -35,7 +35,7 @@ impl Batch {
         let res = self.client.post(endpoint).json(&payload).send().await?;
         match res.status() {
             reqwest::StatusCode::OK => {
-                let res: Vec<BatchAddObject> = res.json().await?;
+                let res: BatchAddObjects = res.json().await?;
                 Ok(res)
             }
             _ => Err(Box::new(BatchError(format!(
@@ -150,14 +150,7 @@ mod tests {
             "path": ["name"],
             "valueText": "aaa"
         });
-        BatchDeleteRequest {
-            matches: MatchConfig {
-                class: "Test".into(),
-                match_where: map,
-            },
-            dry_run: None,
-            output: None,
-        }
+        BatchDeleteRequest::builder(MatchConfig::new("Test", map)).build()
     }
 
     fn test_delete_response() -> BatchDeleteResponse {
@@ -167,10 +160,7 @@ mod tests {
             "valueText": "aaa"
         });
         BatchDeleteResponse {
-            matches: MatchConfig {
-                class: "Test".into(),
-                match_where: map
-            },
+            matches: MatchConfig::new("Test", map),
             output: None,
             dry_run: None,
             results: BatchDeleteResult {

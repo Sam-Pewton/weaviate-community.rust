@@ -795,16 +795,7 @@ mod tests {
             "name": "test",
             "number": 123,
         });
-        Object {
-            class: class_name.into(),
-            properties,
-            id,
-            vector: None,
-            tenant: None,
-            creation_time_unix: None,
-            last_update_time_unix: None,
-            vector_weights: None,
-        }
+        Object::builder(class_name, properties).build()
     }
 
     fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {

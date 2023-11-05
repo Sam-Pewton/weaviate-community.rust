@@ -203,8 +203,8 @@ impl WeaviateClient {
     /// let auth = AuthApiKey::new("your-key");
     /// let client = WeaviateClient::builder("http://localhost:8080").auth_secret(auth).build();
     /// ```
-    pub fn builder(url: &str) -> WeaviateClientBuilder {
-        WeaviateClientBuilder::new(url.into())
+    pub fn builder(base_url: &str) -> WeaviateClientBuilder {
+        WeaviateClientBuilder::new(base_url)
     }
 }
 

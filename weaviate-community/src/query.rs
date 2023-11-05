@@ -40,10 +40,16 @@ impl Query {
                 let res = res.json::<serde_json::Value>().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(GraphQLError(format!(
-                "status code {} received when executing GraphQL Get.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    GraphQLError(
+                        format!(
+                            "status code {} received when executing GraphQL Get.",
+                            res.status()
+                        )
+                    )
+                )
+            ),
         }
     }
     
@@ -63,10 +69,16 @@ impl Query {
             reqwest::StatusCode::OK => {
                 Ok(res)
             }
-            _ => Err(Box::new(GraphQLError(format!(
-                "status code {} received when executing GraphQL Aggregate.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    GraphQLError(
+                        format!(
+                            "status code {} received when executing GraphQL Aggregate.",
+                            res.status()
+                        )
+                    )
+                )
+            ),
         }
     }
     
@@ -86,14 +98,26 @@ impl Query {
             reqwest::StatusCode::OK => {
                 Ok(res)
             }
-            _ => Err(Box::new(GraphQLError(format!(
-                "status code {} received when executing GraphQL Explore.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    GraphQLError(
+                        format!(
+                            "status code {} received when executing GraphQL Explore.",
+                            res.status()
+                        )
+                    )
+                )
+            ),
         }
     }
 
     /// Execute a raw GraphQL query.
+    ///
+    /// This method has been implemented to allow you to run your own query that doesn't fit in
+    /// with the format that is set out in this crate.
+    ///
+    /// If there is a query that you think should be added, please open up a new feature request on
+    /// GitHub.
     pub async fn raw(
         &self,
         query: RawQuery,
@@ -109,10 +133,16 @@ impl Query {
             reqwest::StatusCode::OK => {
                 Ok(res)
             }
-            _ => Err(Box::new(GraphQLError(format!(
-                "status code {} received when executing GraphQL raw query.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    GraphQLError(
+                        format!(
+                            "status code {} received when executing GraphQL raw query.",
+                            res.status()
+                        )
+                    )
+                )
+            ),
         }
     }
 }
