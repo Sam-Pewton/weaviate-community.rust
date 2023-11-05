@@ -556,7 +556,7 @@ impl ExploreBuilder {
 
         // Path
         let mut query = String::from("{\n");
-        query.push_str("  Explore {\n");
+        query.push_str("  Explore\n");
 
         // Filters
         query.push_str("  (\n");

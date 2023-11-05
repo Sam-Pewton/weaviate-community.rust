@@ -351,9 +351,17 @@ impl Schema {
         let endpoint = self.endpoint.join(&endpoint)?;
         let payload = serde_json::to_value(&tenants.tenants)?;
         let res = self.client.put(endpoint).json(&payload).send().await?;
-        let tenants = res.json::<Vec<Tenant>>().await?;
-        let tenants = Tenants { tenants };
-        Ok(tenants)
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                let tenants = res.json::<Vec<Tenant>>().await?;
+                let tenants = Tenants { tenants };
+                Ok(tenants)
+            },
+            _ => Err(Box::new(SchemaError(format!(
+                "status code {} received when calling update_tenants endpoint.",
+                res.status()
+            )))),
+        }
     }
 }
 

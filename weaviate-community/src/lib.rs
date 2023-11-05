@@ -128,7 +128,7 @@ impl WeaviateClient {
 
     /// Determine if the application is ready to receive traffic.
     ///
-    /// https://weaviate.io/developers/weaviate/api/rest/well-known#liveness
+    /// More info on the liveness can be found [here](https://weaviate.io/developers/weaviate/api/rest/well-known#liveness)
     ///
     /// GET /v1/.well-known/live
     ///
@@ -167,20 +167,9 @@ impl WeaviateClient {
 
     /// Determine if the application is ready to receive traffic.
     ///
-    /// https://weaviate.io/developers/weaviate/api/rest/well-known#readiness
+    /// More info on the readiness can be found [here](https://weaviate.io/developers/weaviate/api/rest/well-known#readiness)
     ///
     /// GET /v1/.well-known/ready
-    ///
-    /// Endpoint returns HTTP status code 200 if the application is able to respond to HTTP
-    /// requests, and 503 if the application is not able to serve traffic. If other horizontal
-    /// replicas of Weaviate are available and they are capable of receiving traffic, all traffic
-    /// should be redirected there instead.
-    ///
-    /// # Returns
-    /// * bool => True if 200, False otherwise
-    ///
-    /// # Errors
-    /// When there is a reqwest error
     ///
     /// # Example
     /// ```
