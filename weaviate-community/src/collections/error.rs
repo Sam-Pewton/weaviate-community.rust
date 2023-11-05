@@ -64,7 +64,7 @@ impl Display for BackupError {
     }
 }
 
-/// Custom GraphQL, used when there was a mismatch in expected query parameters for endpoints.
+/// Custom GraphQLError, used when there was a mismatch in expected query parameters for endpoints.
 #[derive(Debug)]
 pub struct GraphQLError(pub String);
 
@@ -73,5 +73,17 @@ impl Error for GraphQLError {}
 impl Display for GraphQLError {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "Error executing GraphQL query: {}", self.0)
+    }
+}
+
+/// Custom NodesError, used when there was an incorrect status code for the nodes endpoint.
+#[derive(Debug)]
+pub struct NodesError(pub String);
+
+impl Error for NodesError {}
+
+impl Display for NodesError {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "NodesError: {}", self.0)
     }
 }

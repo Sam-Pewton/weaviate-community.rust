@@ -7,3 +7,4 @@ pub mod objects;
 pub mod oidc;
 pub mod schema;
 pub mod query;
+pub mod nodes;
