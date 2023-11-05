@@ -191,7 +191,7 @@ impl ObjectBuilder {
     /// let object = ObjectBuilder::new("Object", serde_json::json![{}]).build();
     /// ```
     ///
-    /// Using Class
+    /// Using Object
     /// ```rust
     /// use weaviate_community::collections::objects::Object;
     ///
@@ -266,6 +266,233 @@ impl ConsistencyLevel {
             ConsistencyLevel::ONE => "ONE",
             ConsistencyLevel::QUORUM => "QUORUM",
             ConsistencyLevel::ALL => "ALL",
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct ObjectListParameters {
+    pub class_name: Option<String>,
+    pub limit: Option<u64>,
+    pub offset: Option<u64>,
+    pub after: Option<String>,
+    pub include: Option<String>,
+    pub sort: Option<Vec<String>>,
+    pub order: Option<Vec<String>>,
+}
+
+impl ObjectListParameters {
+    /// Create a new ObjectListParameters with all parameters set to None.
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParameters;
+    ///
+    /// let builder = ObjectListParameters::new();
+    /// ```
+    pub fn new() -> ObjectListParameters {
+        ObjectListParameters::default()
+    }
+
+    /// Create a new builder for the ObjectListParameters.
+    ///
+    /// This is the same as `ObjectListParametersBuilder::new()`.
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParameters;
+    ///
+    /// let builder = ObjectListParameters::builder();
+    /// ```
+    pub fn builder() -> ObjectListParametersBuilder {
+        ObjectListParametersBuilder::default()
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct ObjectListParametersBuilder {
+    pub class_name: Option<String>,
+    pub limit: Option<u64>,
+    pub offset: Option<u64>,
+    pub after: Option<String>,
+    pub include: Option<String>,
+    pub sort: Option<Vec<String>>,
+    pub order: Option<Vec<String>>,
+}
+
+impl ObjectListParametersBuilder {
+    /// Create a new builder for the ObjectListParameters.
+    ///
+    /// This is the same as `ObjectListParameters::builder()`.
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParametersBuilder;
+    ///
+    /// let builder = ObjectListParametersBuilder::new();
+    /// ```
+    pub fn new() -> ObjectListParametersBuilder {
+        ObjectListParametersBuilder::default()
+    }
+
+    /// Add a value to the optional `class_name` value to the parameters.
+    ///
+    /// # Parameters
+    /// - class_name: the class_name to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParametersBuilder;
+    ///
+    /// let builder = ObjectListParametersBuilder::new()
+    ///     .with_class_name("Article");
+    /// ```
+    pub fn with_class_name(mut self, class_name: &str) -> ObjectListParametersBuilder {
+        self.class_name = Some(class_name.into());
+        self
+    }
+
+    /// Add a value to the optional `limit` value to the parameters.
+    ///
+    /// If not set, defaults to 25.
+    ///
+    /// # Parameters
+    /// - limit: the limit value to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParametersBuilder;
+    ///
+    /// let builder = ObjectListParametersBuilder::new()
+    ///     .with_limit(25);
+    /// ```
+    pub fn with_limit(mut self, limit: u64) -> ObjectListParametersBuilder {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Add a value to the optional `offset` value to the parameters.
+    ///
+    /// Cannot be used with `after`.
+    /// Should be used with `limit`.
+    ///
+    /// # Parameters
+    /// - offset: the offset value to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParametersBuilder;
+    ///
+    /// let builder = ObjectListParametersBuilder::new()
+    ///     .with_offset(2);
+    /// ```
+    pub fn with_offset(mut self, offset: u64) -> ObjectListParametersBuilder {
+        self.offset = Some(offset);
+        self
+    }
+
+    /// Add a value to the optional `after` value to the parameters.
+    ///
+    /// Must be used in conjunction with `class`.
+    /// Cannot be used with `offset` or `sort`.
+    /// Should be used with `limit`.
+    ///
+    /// # Parameters
+    /// - after: the after value to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParametersBuilder;
+    ///
+    /// let builder = ObjectListParametersBuilder::new()
+    ///     .with_after("dcfbe06f-fb69-48d7-9a13-e8e78e422486");
+    /// ```
+    pub fn with_after(mut self, after: &str) -> ObjectListParametersBuilder {
+        self.after = Some(after.into());
+        self
+    }
+
+    /// Add a value to the optional `include` value to the parameters.
+    ///
+    /// Allowed values include:
+    /// - classification
+    /// - vector
+    /// - featureProjection
+    /// and other module specific additional properties.
+    ///
+    /// # Parameters
+    /// - include: the include value to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParametersBuilder;
+    ///
+    /// let builder = ObjectListParametersBuilder::new().with_include("classification");
+    /// ```
+    pub fn with_include(mut self, include: &str) -> ObjectListParametersBuilder {
+        self.include = Some(include.into());
+        self
+    }
+
+    /// Add a value to the optional `sort` value to the parameters.
+    ///
+    /// # Parameters
+    /// - sort: the sort value to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParametersBuilder;
+    ///
+    /// let builder = ObjectListParametersBuilder::new().with_sort(vec!["title"]);
+    /// ```
+    pub fn with_sort(mut self, sort: Vec<&str>) -> ObjectListParametersBuilder {
+        let sort = sort.iter().map(|field| field.to_string()).collect();
+        self.sort = Some(sort);
+        self
+    }
+
+    /// Add a value to the optional `order` value to the parameters.
+    ///
+    /// # Parameters
+    /// - order: the order to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParametersBuilder;
+    ///
+    /// let builder = ObjectListParametersBuilder::new().with_order(vec!["asc"]);
+    /// ```
+    pub fn with_order(mut self, order: Vec<&str>) -> ObjectListParametersBuilder {
+        let order = order.iter().map(|field| field.to_string()).collect();
+        self.order = Some(order);
+        self
+    }
+
+    /// Build the ObjectListParameters from the ObjectListParametersBuilder
+    ///
+    /// # Example
+    /// Using ObjectListParametersBuilder
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParametersBuilder;
+    ///
+    /// let object = ObjectListParametersBuilder::new().build();
+    /// ```
+    ///
+    /// Using ObjectListParameters
+    /// ```rust
+    /// use weaviate_community::collections::objects::ObjectListParameters;
+    ///
+    /// let object = ObjectListParameters::builder().build();
+    /// ```
+    pub fn build(self) -> ObjectListParameters {
+        ObjectListParameters {
+            class_name: self.class_name,
+            limit: self.limit,
+            offset: self.offset,
+            after: self.after,
+            include: self.include,
+            sort: self.sort,
+            order: self.order,
         }
     }
 }

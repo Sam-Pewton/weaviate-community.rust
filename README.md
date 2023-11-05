@@ -124,7 +124,95 @@ async fn schema_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> 
 
 ## Objects endpoints
 ```rust
+use uuid::Uuid;
+use weaviate_community::collections::objects::{Object, ObjectListParameters};
+
 async fn objects_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
+    // List every single object
+    let res = client.objects.list(ObjectListParameters::new()).await?;
+
+    // List all objects for a single class
+    let params = ObjectListParameters::builder().with_class_name("Article").build();
+    let res = client.objects.list(params).await?;
+
+    // Create a new object
+    let my_object = Object::builder("Article", serde_json::json![{}]).build();
+    let res = client.objects.create(&my_object, None).await?;
+
+    // Get an object based on its UUID
+    let uuid = Uuid::new_v4();
+    let res = client.objects.get("Article", uuid, None, None, None).await?;
+
+    // Check if a data object exists
+    let uuid = Uuid::new_v4();
+    let res = client.objects.exists("Article", uuid, None, None).await?;
+
+    // Update a data object
+    let uuid = Uuid::parse_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303")?;
+    let properties = serde_json::json!({
+        "title": "new title",
+    });
+    let res = client.objects.update(&properties, "Article", &uuid, None).await?;
+
+    // Replace a data object
+    let uuid = Uuid::parse_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303")?;
+    let properties = serde_json::json!({
+        "properties": {
+            "author": "Jodi Kantor",
+        }
+    });
+    let res = client.objects.replace(&properties, "Publication", &uuid, None).await?;
+
+    // Delete a data object
+    let uuid = Uuid::parse_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303")?;
+    let res = client.objects.delete("Article", &uuid, None, None).await?;
+
+    // Validate a data object
+    let properties = serde_json::json!({
+        "name": "New York Times"
+    });
+    let uuid = Uuid::parse_str("12345678-1234-1234-1234-123456789012")?;
+    let res = client.objects.validate("Publication", &properties, &uuid).await?;
+
+    // Add a cross-reference
+    let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012")?;
+    let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef")?;
+    let res = client.objects.reference_add(
+        "JeopardyQuestion", 
+        &uuid1,
+        "hasCategory", 
+        "JeopardyCategory",
+        &uuid2,
+        None,
+        None
+    ).await?;
+
+    // Update a cross-reference
+    let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012")?;
+    let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef")?;
+    let res = client.objects.reference_update(
+        "JeopardyQuestion", 
+        &uuid1,
+        "hasCategory", 
+        vec!["JeopardyCategory"],
+        vec![&uuid2],
+        None,
+        None
+    ).await?;
+
+    // Delete a cross-reference
+    let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012")?;
+    let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef")?;
+    let res = client.objects.reference_delete(
+        "JeopardyQuestion", 
+        &uuid1,
+        "hasCategory", 
+        "JeopardyCategory",
+        &uuid2,
+        None,
+        None
+    ).await?;
+
     Ok(())
 }
 ```
@@ -136,6 +224,7 @@ use weaviate_community::collections::backups::{
     BackupRestoreRequest,
     BackupBackends
 };
+
 async fn backups_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
     // Create a new backup - with wait for completion
     let req = BackupCreateRequest::builder("my-backup").build();
@@ -158,7 +247,7 @@ async fn backups_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>>
 
     // Restore a backup - without wait for completion
     let req = BackupRestoreRequest::builder().build();
-    let res = client.backups.restore(BackupBackends::FILESYSTEM, "my-backup", req, true).await?;
+    let res = client.backups.restore(BackupBackends::FILESYSTEM, "my-backup", req, false).await?;
 
     // Get the status of a backup restore
     let res = client.backups.get_backup_status(
@@ -166,7 +255,6 @@ async fn backups_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>>
         "my-backup",
         true
     ).await?;
-
 
     Ok(())
 }
@@ -225,6 +313,18 @@ async fn oidc_endpoint(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
 ## Querying
 ```rust
 async fn querying(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
+    // Get
+    todo!();
+
+    // Aggregate
+    todo!();
+
+    // Explore
+    todo!();
+
+    // Raw
+    todo!();
+
     Ok(())
 }
 ```
@@ -237,6 +337,15 @@ async fn health_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> 
 
     // Check database is ready
     let res = client.is_ready().await?;
+
+    Ok(())
+}
+```
+
+## Classification endpoints
+```rust
+async fn classification_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
+    todo!();
 
     Ok(())
 }

@@ -1,5 +1,5 @@
 use crate::collections::error::QueryError;
-use crate::collections::objects::{ConsistencyLevel, Object, OrderBy, MultiObjects};
+use crate::collections::objects::{ConsistencyLevel, Object, MultiObjects, ObjectListParameters};
 use reqwest::Url;
 use std::{error::Error, sync::Arc};
 use uuid::Uuid;
@@ -13,6 +13,9 @@ pub struct Objects {
 }
 
 impl Objects {
+    /// Create a new Objects endpoint orchestrator for the client.
+    ///
+    /// Should not be done manually.
     pub(super) fn new(url: &Url, client: Arc<reqwest::Client>) -> Result<Self, Box<dyn Error>> {
         let endpoint = url.join("/v1/objects/")?;
         Ok(Objects { endpoint, client })
@@ -21,105 +24,94 @@ impl Objects {
     /// List the data objects.
     ///
     /// # Parameters
-    /// class_name: the name of the class to search for
-    /// limit: 
-    /// offset: cannot be used with after, should be used in conjunction with limit
-    /// after: MUST be used with class, cannot be used with offset or sort, should be used with
-    ///          limit
-    /// include: has a list of allowed values, including classification, vector,
-    ///            featureProjection, and other module-specific additional properties
-    /// sort: can be a comma separated list of strings (corresponding to properties)
-    /// order: `asc` or `desc` should be used with sort
+    /// - parameters: the ObjectListParameters to use in the request.
     ///
     /// # Example
-    /// ```
+    /// ```no_run
     /// use weaviate_community::WeaviateClient;
+    /// use weaviate_community::collections::objects::ObjectListParameters;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
-    ///     let res = client
-    ///         .objects
-    ///         .list(
-    ///             Some("MyClass"),
-    ///             None,
-    ///             None,
-    ///             None,
-    ///             None,
-    ///             None,
-    ///             None,
-    ///         ).await;
+    ///
+    ///     //let params = ObjectListParameters::builder().with_class_name("MyClass").build();
+    ///     let params = ObjectListParameters::new();
+    ///     let res = client.objects.list(params).await?;
     ///     Ok(())
     /// }
     /// ```
     pub async fn list(
         &self,
-        class_name: Option<&str>,
-        limit: Option<u64>,
-        offset: Option<u64>,
-        after: Option<&str>,
-        include: Option<&str>,
-        sort: Option<Vec<&str>>,
-        order: Option<OrderBy>,
-        ) -> Result<MultiObjects, Box<dyn Error>> {
+        parameters: ObjectListParameters
+    ) -> Result<MultiObjects, Box<dyn Error>> {
         let mut endpoint = self.endpoint.clone();
 
         // Add the query params when they are present
-        if let Some(c) = class_name {
-            endpoint.query_pairs_mut().append_pair("class", c);
+        if let Some(c) = &parameters.class_name {
+            endpoint.query_pairs_mut().append_pair("class", &c);
         }
-        if let Some(l) = limit {
+        if let Some(l) = &parameters.limit {
             endpoint
                 .query_pairs_mut()
                 .append_pair("limit", &l.to_string());
         }
-        if let Some(o) = offset {
+        if let Some(o) = &parameters.offset {
             endpoint
                 .query_pairs_mut()
                 .append_pair("offset", &o.to_string());
             // Raise an err if after is some
-            if after.is_some() {
+            if parameters.after.is_some() {
                 return Err(
-                    Box::new(QueryError(
-                        "'after' must be None when 'offset' is Some".into(),
-                    ))
+                    Box::new(
+                        QueryError(
+                            "'after' must be None when 'offset' is Some".into(),
+                        )
+                    )
                 );
             }
         }
-        if let Some(a) = after {
-            endpoint.query_pairs_mut().append_pair("after", a);
-            if after.is_none() {
+        if let Some(a) = &parameters.after {
+            endpoint.query_pairs_mut().append_pair("after", &a);
+            if parameters.after.is_none() {
                 return Err(
-                    Box::new(QueryError(
-                        "'class' must be Some when 'after' is Some".into(),
-                    ))
+                    Box::new(
+                        QueryError(
+                            "'class' must be Some when 'after' is Some".into(),
+                        )
+                    )
                 );
             }
             // raise an error if offset or sort are some
-            if offset.is_some() {
+            if parameters.offset.is_some() {
                 return Err(
-                    Box::new(QueryError(
-                        "'offset' must be None when 'after' is Some".into(),
-                    ))
+                    Box::new(
+                        QueryError(
+                            "'offset' must be None when 'after' is Some".into(),
+                        )
+                    )
                 );
             }
-            if sort.is_some() {
+            if parameters.sort.is_some() {
                 return Err(
-                    Box::new(QueryError(
-                        "'sort' must be None when 'after' is Some".into(),
-                    ))
+                    Box::new(
+                        QueryError(
+                            "'sort' must be None when 'after' is Some".into(),
+                        )
+                    )
                 );
             }
         }
-        if let Some(i) = include {
-            endpoint.query_pairs_mut().append_pair("include", i);
+        if let Some(i) = parameters.include {
+            endpoint.query_pairs_mut().append_pair("include", &i);
         }
-        if let Some(s) = sort {
+        if let Some(s) = parameters.sort {
             let values = s.join(",");
             endpoint.query_pairs_mut().append_pair("sort", &values);
         }
-        if let Some(o) = order {
-            endpoint.query_pairs_mut().append_pair("order", o.value());
+        if let Some(o) = parameters.order {
+            let values = o.join(",");
+            endpoint.query_pairs_mut().append_pair("order", &values);
         }
 
         let res = self.client.get(endpoint).send().await?;
@@ -144,6 +136,10 @@ impl Objects {
     ///
     /// When inserting a large number of objects, it is more efficient to use the `batch` insert
     /// methods.
+    ///
+    /// # Parameters
+    /// - new_object: the new object to create
+    /// - consistency_level: the consistency_level of the new object
     ///
     /// # Example
     /// ```
@@ -204,6 +200,13 @@ impl Objects {
     }
 
     /// Collect an individual data object given it's UUID.
+    ///
+    /// # Parameters
+    /// - class_name: the name of the class that the object belongs to
+    /// - id: the uuid of the object
+    /// - include: extra fields to include (classification, vector)
+    /// - consistency_level: the consistency_level of the object
+    /// - tenant_key: the tenant that the object is associated with
     ///
     /// # Example
     /// ```
@@ -267,6 +270,12 @@ impl Objects {
     ///
     /// This works the same as the `get` method, but uses `HEAD` HTTP method.
     ///
+    /// # Parameters
+    /// - class_name: the class name of the object to check for
+    /// - id: the uuid of the object
+    /// - consistency_level: the consistency_level of the object
+    /// - tenant_name: the name of the tenant the object is associated with
+    ///
     /// # Example
     /// ```
     /// use uuid::Uuid;
@@ -310,10 +319,12 @@ impl Objects {
             }
             _ => Err(
                 Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling exists (object) endpoint.",
-                        res.status()
-                    ))
+                    QueryError(
+                        format!(
+                            "status code {} received when calling exists (object) endpoint.",
+                            res.status()
+                        )
+                    )
                 )
             ),
         }
@@ -325,6 +336,12 @@ impl Objects {
     ///
     /// Note that if the class is configured with a vectorizer, Weaviate will only compute a new
     /// vector for an updated object if the update changes the underlying text to be vectorized.
+    ///
+    /// # Parameters
+    /// - properties: the properties to update the object with
+    /// - class_name: the name of the class the object belongs to
+    /// - id: the uuid of the object
+    /// - consistency_level: the consistency_level of the object
     /// 
     /// # Example
     /// ```
@@ -367,10 +384,12 @@ impl Objects {
             }
             _ => Err(
                 Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling update object endpoint.",
-                        res.status()
-                    ))
+                    QueryError(
+                        format!(
+                            "status code {} received when calling update object endpoint.",
+                            res.status()
+                        )
+                    )
                 )
             ),
         }
@@ -382,6 +401,12 @@ impl Objects {
     ///
     /// Note that if the class is configured with a vectorizer, Weaviate will only compute a new
     /// vector for an updated object if the update changes the underlying text to be vectorized.
+    ///
+    /// # Parameters
+    /// - properties: the properties to replace with
+    /// - class_name: the name of the class the object belongs to
+    /// - id: the uuid of the object to replace
+    /// - consistency_level: the consistency_level of the object
     ///
     /// # Example
     /// ```
@@ -433,16 +458,24 @@ impl Objects {
             }
             _ => Err(
                 Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling update class endpoint.",
-                        res.status()
-                    ))
+                    QueryError(
+                        format!(
+                            "status code {} received when calling update class endpoint.",
+                            res.status()
+                        )
+                    )
                 )
             ),
         }
     }
 
     /// Delete an individual data object from Weaviate.
+    ///
+    /// # Parameters
+    /// - class_name: the name of the class the object belongs to
+    /// - id: the uuid of the object to delete
+    /// - consistency_level: the consistency_level of the object
+    /// - tenant_name: the name of the tenant the object is associated to
     ///
     /// # Example
     /// ```
@@ -488,16 +521,23 @@ impl Objects {
             }
             _ => Err(
                 Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling delete object endpoint.",
-                        res.status()
-                    ))
+                    QueryError(
+                        format!(
+                            "status code {} received when calling delete object endpoint.",
+                            res.status()
+                        )
+                    )
                 )
             ),
         }
     }
 
     /// Validate an object's schema and metadata without creating it.
+    ///
+    /// # Parameters
+    /// - class_name: the name of the class you want to validate against
+    /// - properties: the properties you want to validate
+    /// - id: the uuid you want to set the new object
     ///
     /// # Example
     /// ```
@@ -511,14 +551,14 @@ impl Objects {
     ///         "name": "New York Times"
     ///     });
     ///     let uuid = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
-    ///     let res = client.objects.validate("Publication", properties, &uuid).await;
+    ///     let res = client.objects.validate("Publication", &properties, &uuid).await;
     ///     Ok(())
     /// }
     /// ```
     pub async fn validate(
         &self,
         class_name: &str,
-        properties: serde_json::Value,
+        properties: &serde_json::Value,
         id: &Uuid,
     ) -> Result<bool, Box<dyn Error>> {
         let payload = serde_json::json!({
@@ -535,10 +575,12 @@ impl Objects {
             }
             _ => Err(
                 Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling validate object endpoint.",
-                        res.status()
-                    ))
+                    QueryError(
+                        format!(
+                            "status code {} received when calling validate object endpoint.",
+                            res.status()
+                        )
+                    )
                 )
             ),
         }
@@ -548,6 +590,15 @@ impl Objects {
     /// specified by its class name and id.
     ///
     /// More on cross-references can be found [here](https://weaviate.io/developers/weaviate/config-refs/datatypes#datatype-cross-reference)
+    ///
+    /// # Parameters
+    /// - from_class_name: the class to add the beacon to
+    /// - from_uuid: the uuid of the object to add the beacon to
+    /// - from_property_name: the name of the property the beacon should be added to
+    /// - to_class_name: the name of the class to beacon to
+    /// - to_uuid: the uuid of the object you want to create a beacon to
+    /// - consistency_level: the consistency level to set
+    /// - tenant_name: the name of the tenant the `from_uuid` belongs to
     ///
     /// # Example
     /// ```
@@ -622,6 +673,15 @@ impl Objects {
     /// id.
     ///
     /// Requires the same length of to_class_names as to_uuids as input.
+    ///
+    /// # Parameters
+    /// - from_class_name: the class that has the beacons
+    /// - from_uuid: the uuid of the object to update the beacons of
+    /// - from_property_name: the name of the property containing the beacons
+    /// - to_class_names: the names of the classes to beacon to
+    /// - to_uuids: the uuids of the objects you want to update the beacons to
+    /// - consistency_level: the consistency level to set
+    /// - tenant_name: the name of the tenant the `from_uuid` belongs to
     ///
     /// # Example
     /// ```
@@ -711,6 +771,15 @@ impl Objects {
     /// specified property of a given object has, if it exists in the list. Will return true both
     /// when the reference existed, and when it didn't.
     ///
+    /// # Parameters
+    /// - from_class_name: the class that has the beacons
+    /// - from_uuid: the uuid of the object to update the beacons of
+    /// - from_property_name: the name of the property containing the beacons
+    /// - to_class_name: the names of the class to remove beacon to
+    /// - to_uuid: the uuid of the object you want to remove the beacon to
+    /// - consistency_level: the consistency level to set
+    /// - tenant_name: the name of the tenant the `from_uuid` belongs to
+    ///
     /// # Example
     /// ```
     /// use uuid::Uuid;
@@ -787,15 +856,19 @@ mod tests {
 
     use crate::{
         WeaviateClient, 
-        collections::objects::Object
+        collections::objects::{Object, ObjectListParameters, MultiObjects}
     };
 
-    fn test_object(class_name: &str, id: Option<Uuid>) -> Object {
+    fn test_object(class_name: &str) -> Object {
         let properties = serde_json::json!({
             "name": "test",
             "number": 123,
         });
         Object::builder(class_name, properties).build()
+    }
+
+    fn test_objects(class_name: &str) -> MultiObjects {
+        MultiObjects::new(vec![test_object(class_name), test_object(class_name)])
     }
 
     fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
@@ -806,12 +879,77 @@ mod tests {
         (mock_server, client)
     }
 
+    fn mock_post(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+        body: &str
+    ) -> mockito::Mock {
+        server.mock("POST", endpoint)
+            .with_status(status_code)
+            .with_header("content-type", "application/json")
+            .with_body(body)
+            .create()
+    }
+
+    fn mock_put(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+        body: &str
+    ) -> mockito::Mock {
+        server.mock("PUT", endpoint)
+            .with_status(status_code)
+            .with_header("content-type", "application/json")
+            .with_body(body)
+            .create()
+    }
+
+    fn mock_patch(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+        body: &str
+    ) -> mockito::Mock {
+        server.mock("PATCH", endpoint)
+            .with_status(status_code)
+            .with_header("content-type", "application/json")
+            .with_body(body)
+            .create()
+    }
+
+    fn mock_head(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+        body: &str
+    ) -> mockito::Mock {
+        server.mock("HEAD", endpoint)
+            .with_status(status_code)
+            .with_header("content-type", "application/json")
+            .with_body(body)
+            .create()
+    }
+
     fn mock_get(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
+        body: &str
     ) -> mockito::Mock {
         server.mock("GET", endpoint)
+            .with_status(status_code)
+            .with_header("content-type", "application/json")
+            .with_body(body)
+            .create()
+    }
+
+    fn mock_delete(
+        server: &mut mockito::ServerGuard,
+        endpoint: &str,
+        status_code: usize,
+    ) -> mockito::Mock {
+        server.mock("DELETE", endpoint)
             .with_status(status_code)
             .create()
     }
@@ -819,80 +957,325 @@ mod tests {
     #[tokio::test]
     async fn test_list_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let objects = test_objects("Test");
+        let objects_str = serde_json::to_string(&objects).unwrap();
+        let mock = mock_get(&mut mock_server, "/v1/objects/", 200, &objects_str);
+        let res = client.objects.list(ObjectListParameters::new()).await;
+        mock.assert();
+        assert!(res.is_ok());
+        assert_eq!(objects.objects[0].class, res.unwrap().objects[0].class);
     }
 
     #[tokio::test]
     async fn test_list_err() {
         let (mut mock_server, client) = get_test_harness();
+        let mock = mock_get(&mut mock_server, "/v1/objects/", 422, "");
+        let res = client.objects.list(ObjectListParameters::new()).await;
+        mock.assert();
+        assert!(res.is_err());
     }
 
     #[tokio::test]
     async fn test_create_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let object = test_object("Test");
+        let object_str = serde_json::to_string(&object).unwrap();
+        let mock = mock_post(&mut mock_server, "/v1/objects/", 200, &object_str);
+        let res = client.objects.create(&object, None).await;
+        mock.assert();
+        assert!(res.is_ok());
+        assert_eq!(object.class, res.unwrap().class);
     }
 
     #[tokio::test]
     async fn test_create_err() {
         let (mut mock_server, client) = get_test_harness();
+        let object = test_object("Test");
+        let mock = mock_post(&mut mock_server, "/v1/objects/", 422, "");
+        let res = client.objects.create(&object, None).await;
+        mock.assert();
+        assert!(res.is_err());
     }
 
     #[tokio::test]
     async fn test_get_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let object = test_object("Test");
+        let object_str = serde_json::to_string(&object).unwrap();
+        let uuid = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        let mock = mock_get(&mut mock_server, &url, 200, &object_str);
+        let res = client.objects.get("Test", &uuid, None, None, None).await;
+        mock.assert();
+        assert!(res.is_ok());
+        assert_eq!(object.class, res.unwrap().class);
     }
 
     #[tokio::test]
     async fn test_get_err() {
         let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        let mock = mock_get(&mut mock_server, &url, 422, "");
+        let res = client.objects.get("Test", &uuid, None, None, None).await;
+        mock.assert();
+        assert!(res.is_err());
     }
 
     #[tokio::test]
     async fn test_exists_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        let mock = mock_head(&mut mock_server, &url, 204, "");
+        let res = client.objects.exists("Test", &uuid, None, None).await;
+        mock.assert();
+        assert!(res.is_ok());
+        assert!(res.unwrap());
     }
 
     #[tokio::test]
     async fn test_exists_err() {
         let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        let mock = mock_head(&mut mock_server, &url, 422, "");
+        let res = client.objects.exists("Test", &uuid, None, None).await;
+        mock.assert();
+        assert!(res.is_err());
     }
 
     #[tokio::test]
     async fn test_update_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        let mock = mock_patch(&mut mock_server, &url, 204, "");
+        let res = client.objects.update(&serde_json::json![{}], "Test", &uuid, None).await;
+        mock.assert();
+        assert!(res.is_ok());
     }
 
     #[tokio::test]
     async fn test_update_err() {
         let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        let mock = mock_patch(&mut mock_server, &url, 422, "");
+        let res = client.objects.update(&serde_json::json![{}], "Test", &uuid, None).await;
+        mock.assert();
+        assert!(res.is_err());
     }
 
     #[tokio::test]
     async fn test_replace_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let object = test_object("Test");
+        let object_str = serde_json::to_string(&object).unwrap();
+        let uuid = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        let mock = mock_put(&mut mock_server, &url, 200, &object_str);
+        let res = client.objects.replace(&serde_json::json![{}], "Test", &uuid, None).await;
+        mock.assert();
+        assert!(res.is_ok());
     }
 
     #[tokio::test]
     async fn test_replace_err() {
         let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        let mock = mock_put(&mut mock_server, &url, 422, "");
+        let res = client.objects.replace(&serde_json::json![{}], "Test", &uuid, None).await;
+        mock.assert();
+        assert!(res.is_err());
     }
 
     #[tokio::test]
     async fn test_delete_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        let mock = mock_delete(&mut mock_server, &url, 204);
+        let res = client.objects.delete("Test", &uuid, None, None).await;
+        mock.assert();
+        assert!(res.is_ok());
     }
 
     #[tokio::test]
     async fn test_delete_err() {
         let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        let mock = mock_delete(&mut mock_server, &url, 404);
+        let res = client.objects.delete("Test", &uuid, None, None).await;
+        mock.assert();
+        assert!(res.is_err());
     }
 
     #[tokio::test]
     async fn test_validate_ok() {
         let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let mock = mock_post(&mut mock_server, "/v1/objects/validate", 200, "");
+        let res = client.objects.validate("Test", &serde_json::json![{}], &uuid).await;
+        mock.assert();
+        assert!(res.is_ok());
     }
 
     #[tokio::test]
     async fn test_validate_err() {
         let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let mock = mock_post(&mut mock_server, "/v1/objects/validate", 404, "");
+        let res = client.objects.validate("Test", &serde_json::json![{}], &uuid).await;
+        mock.assert();
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_reference_add_ok() {
+        let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let uuid_2 = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        url.push_str("/references/testProperty");
+        let mock = mock_post(&mut mock_server, &url, 200, "");
+        let res = client.objects.reference_add(
+            "Test",
+            &uuid,
+            "testProperty",
+            "TestTwo",
+            &uuid_2,
+            None,
+            None,
+        ).await;
+        mock.assert();
+        assert!(res.is_ok());
+        assert!(res.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_reference_add_err() {
+        let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let uuid_2 = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        url.push_str("/references/testProperty");
+        let mock = mock_post(&mut mock_server, &url, 404, "");
+        let res = client.objects.reference_add(
+            "Test",
+            &uuid,
+            "testProperty",
+            "TestTwo",
+            &uuid_2,
+            None,
+            None,
+        ).await;
+        mock.assert();
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_reference_update_ok() {
+        let (mut mock_server, client) = get_test_harness();
+        let object = test_object("Test");
+        let object_str = serde_json::to_string(&object).unwrap();
+        let uuid = Uuid::new_v4();
+        let uuid_2 = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        url.push_str("/references/testProperty");
+        let mock = mock_put(&mut mock_server, &url, 200, &object_str);
+        let res = client.objects.reference_update(
+            "Test",
+            &uuid,
+            "testProperty",
+            vec!["TestTwo"],
+            vec![&uuid_2],
+            None,
+            None,
+        ).await;
+        mock.assert();
+        assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_reference_update_err() {
+        let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let uuid_2 = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        url.push_str("/references/testProperty");
+        let mock = mock_put(&mut mock_server, &url, 404, "");
+        let res = client.objects.reference_update(
+            "Test",
+            &uuid,
+            "testProperty",
+            vec!["TestTwo"],
+            vec![&uuid_2],
+            None,
+            None,
+        ).await;
+        mock.assert();
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_reference_delete_ok() {
+        let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let uuid_2 = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        url.push_str("/references/testProperty");
+        let mock = mock_delete(&mut mock_server, &url, 204);
+        let res = client.objects.reference_delete(
+            "Test",
+            &uuid,
+            "testProperty",
+            "TestTwo",
+            &uuid_2,
+            None,
+            None,
+        ).await;
+        mock.assert();
+        assert!(res.is_ok());
+        assert!(res.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_reference_delete_err() {
+        let (mut mock_server, client) = get_test_harness();
+        let uuid = Uuid::new_v4();
+        let uuid_2 = Uuid::new_v4();
+        let mut url = String::from("/v1/objects/Test/");
+        url.push_str(&uuid.to_string());
+        url.push_str("/references/testProperty");
+        let mock = mock_delete(&mut mock_server, &url, 404);
+        let res = client.objects.reference_delete(
+            "Test",
+            &uuid,
+            "testProperty",
+            "TestTwo",
+            &uuid_2,
+            None,
+            None,
+        ).await;
+        mock.assert();
+        assert!(res.is_err());
     }
 }
