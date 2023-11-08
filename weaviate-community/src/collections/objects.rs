@@ -496,3 +496,192 @@ impl ObjectListParametersBuilder {
         }
     }
 }
+
+/// Wrapper for multiple references.
+pub struct References(pub Vec<Reference>);
+
+impl References {
+    /// Create a new References wrapper.
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::{References, Reference};
+    ///
+    /// todo!();
+    /// ```
+    pub fn new(references: Vec<Reference>) -> References {
+        References(references)
+    }
+}
+
+/// The Reference type for adding a reference between classes
+pub struct Reference {
+    pub from_class_name: String,
+    pub from_uuid: Uuid,
+    pub from_property_name: String,
+    pub to_class_name: String,
+    pub to_uuid: Uuid,
+    pub consistency_level: Option<ConsistencyLevel>,
+    pub tenant_name: Option<String>,
+}
+
+impl Reference {
+    /// Create a new Reference with all optional parameters set to None.
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::Reference;
+    ///
+    /// todo!();
+    /// ```
+    pub fn new(
+        from_class_name: &str,
+        from_uuid: &Uuid,
+        from_property_name: &str,
+        to_class_name: &str,
+        to_uuid: &Uuid,
+    ) -> Reference {
+        Reference {
+            from_class_name: from_class_name.into(),
+            from_uuid: from_uuid.clone(),
+            from_property_name: from_property_name.into(),
+            to_class_name: to_class_name.into(),
+            to_uuid: to_uuid.clone(),
+            consistency_level: None,
+            tenant_name: None,
+        }
+    }
+
+    /// Create a new builder for the Reference.
+    ///
+    /// This is the same as `ReferenceBuilder::new()`.
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::Reference;
+    ///
+    /// todo!();
+    /// ```
+    pub fn builder(
+        from_class_name: &str,
+        from_uuid: &Uuid,
+        from_property_name: &str,
+        to_class_name: &str,
+        to_uuid: &Uuid,
+    ) -> ReferenceBuilder {
+        ReferenceBuilder::new(
+            from_class_name,
+            from_uuid,
+            from_property_name,
+            to_class_name,
+            to_uuid,
+        )
+    }
+}
+
+/// The builder for a Reference
+pub struct ReferenceBuilder {
+    pub from_class_name: String,
+    pub from_uuid: Uuid,
+    pub from_property_name: String,
+    pub to_class_name: String,
+    pub to_uuid: Uuid,
+    pub consistency_level: Option<ConsistencyLevel>,
+    pub tenant_name: Option<String>,
+}
+
+impl ReferenceBuilder {
+    /// Create a new builder for the Reference.
+    ///
+    /// This is the same as `Reference::builder()`.
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ReferenceBuilder;
+    ///
+    /// todo!();
+    /// ```
+    pub fn new(
+        from_class_name: &str,
+        from_uuid: &Uuid,
+        from_property_name: &str,
+        to_class_name: &str,
+        to_uuid: &Uuid,
+    ) -> ReferenceBuilder {
+        ReferenceBuilder {
+            from_class_name: from_class_name.into(),
+            from_uuid: from_uuid.clone(),
+            from_property_name: from_property_name.into(),
+            to_class_name: to_class_name.into(),
+            to_uuid: to_uuid.clone(),
+            consistency_level: None,
+            tenant_name: None,
+        }
+    }
+
+    /// Add a value to the optional `consistency_level` value to the reference.
+    ///
+    /// # Parameters
+    /// - consistency_level: the consistency_level to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ReferenceBuilder;
+    ///
+    /// todo!();
+    /// ```
+    pub fn with_consistency_level(
+        mut self,
+        consistency_level: ConsistencyLevel
+    ) -> ReferenceBuilder {
+        self.consistency_level = Some(consistency_level);
+        self
+    }
+
+    /// Add a value to the optional `tenant_name` value to the reference.
+    ///
+    /// # Parameters
+    /// - tenant_name: the tenant_name to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::objects::ReferenceBuilder;
+    ///
+    /// todo!();
+    /// ```
+    pub fn with_tenant_name(
+        mut self,
+        tenant_name: String
+    ) -> ReferenceBuilder {
+        self.tenant_name = Some(tenant_name);
+        self
+    }
+
+    /// Build the Reference from the ReferenceBuilder
+    ///
+    /// # Example
+    /// Using ReferenceBuilder
+    /// ```rust
+    /// use weaviate_community::collections::objects::ReferenceBuilder;
+    ///
+    /// todo!()
+    /// ```
+    ///
+    /// Using ObjectListParameters
+    /// ```rust
+    /// use weaviate_community::collections::objects::Reference;
+    ///
+    /// todo!()
+    /// ```
+    pub fn build(self) -> Reference {
+        Reference {
+            from_class_name: self.from_class_name,
+            from_uuid: self.from_uuid,
+            from_property_name: self.from_property_name,
+            to_class_name: self.to_class_name,
+            to_uuid: self.to_uuid,
+            consistency_level: self.consistency_level,
+            tenant_name: self.tenant_name,
+        }
+    }
+}

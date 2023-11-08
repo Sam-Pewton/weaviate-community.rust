@@ -1,5 +1,5 @@
 use crate::collections::error::QueryError;
-use crate::collections::objects::{ConsistencyLevel, Object, MultiObjects, ObjectListParameters};
+use crate::collections::objects::{ConsistencyLevel, Object, MultiObjects, ObjectListParameters, Reference};
 use reqwest::Url;
 use std::{error::Error, sync::Arc};
 use uuid::Uuid;
@@ -626,31 +626,25 @@ impl Objects {
     /// ```
     pub async fn reference_add(
         &self,
-        from_class_name: &str,
-        from_uuid: &Uuid,
-        from_property_name: &str,
-        to_class_name: &str,
-        to_uuid: &Uuid,
-        consistency_level: Option<ConsistencyLevel>,
-        tenant_name: Option<&str>,
+        reference: Reference,
     ) -> Result<bool, Box<dyn Error>> {
         let payload = serde_json::json!({
-            "beacon": format!("weaviate://localhost/{}/{}", to_class_name, to_uuid),
+            "beacon": format!("weaviate://localhost/{}/{}", reference.to_class_name, reference.to_uuid),
         });
-        let mut endpoint: String = from_class_name.into();
+        let mut endpoint: String = reference.from_class_name.into();
         endpoint.push_str("/");
-        endpoint.push_str(&from_uuid.to_string());
+        endpoint.push_str(&reference.from_uuid.to_string());
         endpoint.push_str("/references/");
-        endpoint.push_str(&from_property_name.to_string());
+        endpoint.push_str(&reference.from_property_name.to_string());
         let mut endpoint = self.endpoint.join(&endpoint)?;
-        if let Some(cl) = consistency_level {
+        if let Some(cl) = reference.consistency_level {
             endpoint
                 .query_pairs_mut()
                 .append_pair("consistency_level", &cl.value());
         }
-        if let Some(t) = tenant_name {
+        if let Some(t) = reference.tenant_name {
             // multi tenancy must be enabled first
-            endpoint.query_pairs_mut().append_pair("tenant", t);
+            endpoint.query_pairs_mut().append_pair("tenant", &t);
         }
 
         let res = self.client.post(endpoint).json(&payload).send().await?;
@@ -806,31 +800,25 @@ impl Objects {
     /// ```
     pub async fn reference_delete(
         &self,
-        from_class_name: &str,
-        from_uuid: &Uuid,
-        from_property_name: &str,
-        to_class_name: &str,
-        to_uuid: &Uuid,
-        consistency_level: Option<ConsistencyLevel>,
-        tenant_name: Option<&str>,
+        reference: Reference
     ) -> Result<bool, Box<dyn Error>> {
         let payload = serde_json::json!({
-            "beacon": format!("weaviate://localhost/{}/{}", to_class_name, to_uuid),
+            "beacon": format!("weaviate://localhost/{}/{}", reference.to_class_name, reference.to_uuid),
         });
-        let mut endpoint: String = from_class_name.into();
+        let mut endpoint: String = reference.from_class_name.into();
         endpoint.push_str("/");
-        endpoint.push_str(&from_uuid.to_string());
+        endpoint.push_str(&reference.from_uuid.to_string());
         endpoint.push_str("/references/");
-        endpoint.push_str(&from_property_name.to_string());
+        endpoint.push_str(&reference.from_property_name.to_string());
         let mut endpoint = self.endpoint.join(&endpoint)?;
-        if let Some(cl) = consistency_level {
+        if let Some(cl) = reference.consistency_level {
             endpoint
                 .query_pairs_mut()
                 .append_pair("consistency_level", &cl.value());
         }
-        if let Some(t) = tenant_name {
+        if let Some(t) = reference.tenant_name {
             // multi tenancy must be enabled first
-            endpoint.query_pairs_mut().append_pair("tenant", t);
+            endpoint.query_pairs_mut().append_pair("tenant", &t);
         }
 
         let res = self.client.delete(endpoint).json(&payload).send().await?;
@@ -856,7 +844,7 @@ mod tests {
 
     use crate::{
         WeaviateClient, 
-        collections::objects::{Object, ObjectListParameters, MultiObjects}
+        collections::objects::{Object, ObjectListParameters, MultiObjects, Reference}
     };
 
     fn test_object(class_name: &str) -> Object {
@@ -869,6 +857,16 @@ mod tests {
 
     fn test_objects(class_name: &str) -> MultiObjects {
         MultiObjects::new(vec![test_object(class_name), test_object(class_name)])
+    }
+
+    fn test_reference(uuid: &Uuid, uuid_2: &Uuid) -> Reference {
+        Reference::new(
+            "Test",
+            uuid,
+            "testProperty",
+            "TestTwo",
+            uuid_2,
+        )
     }
 
     fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
@@ -1153,13 +1151,7 @@ mod tests {
         url.push_str("/references/testProperty");
         let mock = mock_post(&mut mock_server, &url, 200, "");
         let res = client.objects.reference_add(
-            "Test",
-            &uuid,
-            "testProperty",
-            "TestTwo",
-            &uuid_2,
-            None,
-            None,
+            test_reference(&uuid, &uuid_2)
         ).await;
         mock.assert();
         assert!(res.is_ok());
@@ -1176,13 +1168,7 @@ mod tests {
         url.push_str("/references/testProperty");
         let mock = mock_post(&mut mock_server, &url, 404, "");
         let res = client.objects.reference_add(
-            "Test",
-            &uuid,
-            "testProperty",
-            "TestTwo",
-            &uuid_2,
-            None,
-            None,
+            test_reference(&uuid, &uuid_2)
         ).await;
         mock.assert();
         assert!(res.is_err());
@@ -1244,13 +1230,7 @@ mod tests {
         url.push_str("/references/testProperty");
         let mock = mock_delete(&mut mock_server, &url, 204);
         let res = client.objects.reference_delete(
-            "Test",
-            &uuid,
-            "testProperty",
-            "TestTwo",
-            &uuid_2,
-            None,
-            None,
+            test_reference(&uuid, &uuid_2)
         ).await;
         mock.assert();
         assert!(res.is_ok());
@@ -1267,15 +1247,10 @@ mod tests {
         url.push_str("/references/testProperty");
         let mock = mock_delete(&mut mock_server, &url, 404);
         let res = client.objects.reference_delete(
-            "Test",
-            &uuid,
-            "testProperty",
-            "TestTwo",
-            &uuid_2,
-            None,
-            None,
+            test_reference(&uuid, &uuid_2)
         ).await;
         mock.assert();
         assert!(res.is_err());
     }
+
 }
