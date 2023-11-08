@@ -604,6 +604,7 @@ impl Objects {
     /// ```
     /// use uuid::Uuid;
     /// use weaviate_community::WeaviateClient;
+    /// use weaviate_community::collections::objects::Reference;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -611,15 +612,15 @@ impl Objects {
     ///     let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
     ///     let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
     ///
-    ///     let res = client.objects.reference_add(
+    ///     let reference = Reference::new(
     ///         "JeopardyQuestion", 
     ///         &uuid1,
     ///         "hasCategory", 
     ///         "JeopardyCategory",
     ///         &uuid2,
-    ///         None,
-    ///         None
-    ///     ).await;
+    ///     );
+    ///
+    ///     let res = client.objects.reference_add(reference).await;
     ///
     ///     Ok(())
     /// }
@@ -778,6 +779,7 @@ impl Objects {
     /// ```
     /// use uuid::Uuid;
     /// use weaviate_community::WeaviateClient;
+    /// use weaviate_community::collections::objects::Reference;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -785,15 +787,15 @@ impl Objects {
     ///     let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
     ///     let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
     ///
-    ///     let res = client.objects.reference_delete(
+    ///     let reference = Reference::new(
     ///         "JeopardyQuestion", 
     ///         &uuid1,
     ///         "hasCategory", 
     ///         "JeopardyCategory",
     ///         &uuid2,
-    ///         None,
-    ///         None
-    ///     ).await;
+    ///     );
+    ///
+    ///     let res = client.objects.reference_delete(reference).await;
     ///
     ///     Ok(())
     /// }

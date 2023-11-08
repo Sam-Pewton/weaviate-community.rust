@@ -254,7 +254,7 @@ pub struct DeleteObject {
     pub id: Uuid,
     pub status: GeneralStatus,
     #[serde(default)]
-    pub errors: Option<DeleteObjectErrors>,
+    pub errors: Option<BatchRequestErrors>,
 }
 
 /// Strict definitions of the different status levels available for batch requests.
@@ -279,21 +279,21 @@ pub struct ResultStatus {
 ///
 /// You shouldn't need to create this yourself unless for asserting against.
 #[derive(Serialize, Deserialize, Debug)]
-pub struct DeleteObjectErrors {
-    pub error: DeleteObjectErrorMessages,
+pub struct BatchRequestErrors {
+    pub error: ErrorMessages,
 }
 
 /// Container for multiple individual DeleteObjectErrorMessage items
 ///
 /// You shouldn't need to create this yourself.
 #[derive(Serialize, Deserialize, Debug)]
-pub struct DeleteObjectErrorMessages(Vec<DeleteObjectErrorMessage>);
+pub struct ErrorMessages(Vec<ErrorMessage>);
 
 /// A single error message received as a result of a failed request
 ///
 /// You shouldn't need to create this yourself unless for asserting against.
 #[derive(Serialize, Deserialize, Debug)]
-pub struct DeleteObjectErrorMessage {
+pub struct ErrorMessage {
     pub message: String,
 }
 
@@ -335,10 +335,6 @@ pub struct BatchAddObject {
 
 impl BatchAddObject {
     /// Transform the BatchAddObject response item to an Object item.
-    ///
-    /// # Example
-    /// ```rust
-    /// ```
     pub fn to_object(self) -> Object {
         Object {
             class: self.class,
@@ -351,4 +347,28 @@ impl BatchAddObject {
             vector_weights: self.vector_weights,
         }
     }
+}
+
+/// Wrapper for the response of the batch add response payload items for each beacon.
+///
+/// There should be no need to make this manually.
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BatchAddReferencesResponse(pub Vec<BatchAddReferenceResponse>);
+
+/// An individual item received as part of the batch add response payload.
+///
+/// There should be no need to make this manually.
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BatchAddReferenceResponse {
+    result: BatchAddReferenceResult,
+}
+
+/// The response field of the BatchAddReferenceResponse
+///
+/// There should be no need to make this manually.
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BatchAddReferenceResult {
+    pub status: GeneralStatus,
+    #[serde(default)]
+    pub errors: Option<BatchRequestErrors>,
 }
