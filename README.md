@@ -260,20 +260,69 @@ async fn backups_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>>
 
 ## Batch endpoints
 ```rust
+use uuid::Uuid;
+use weaviate_community::collections::objects::{
+    Object, 
+    MultiObject,
+    Reference, 
+    References, 
+    ConsistencyLevel,
+};
+use weaviate_community::collections::batch::{BatchDeleteRequest, MatchConfig};
 async fn batch_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
     // Batch add objects
-    todo!();
+    let author_uuid = Uuid::parse_str("36ddd591-2dee-4e7e-a3cc-eb86d30a4303").unwrap();
+    let article_a_uuid = Uuid::parse_str("6bb06a43-e7f0-393e-9ecf-3c0f4e129064").unwrap();
+    let article_b_uuid = Uuid::parse_str("b72912b9-e5d7-304e-a654-66dc63c55b32").unwrap();
+
+    let article_a = Object::builder("Article", serde_json::json!({}))
+        .with_id(article_a_uuid.clone())
+        .build();
+
+    let article_b = Object::builder("Article", serde_json::json!({}))
+        .with_id(article_b_uuid.clone())
+        .build();
+
+    let author = Object::builder("Author", serde_json::json!({}))
+        .with_id(author_uuid.clone())
+        .build();
+
+    let res = client.batch.objects_batch_add(
+        MultiObjects::new(vec![article_a, article_b, author]), Some(ConsistencyLevel::ALL)
+    ).await;
 
     // Batch delete objects
-    todo!();
+    let req = BatchDeleteRequest::builder(
+        MatchConfig::new(
+            "Article",
+            serde_json::json!({
+                "operator": "Like",
+                "path": ["id"],
+                "valueText": "*4*",
+            })
+        )
+    ).build();
+    let res = client.batch.objects_batch_delete(req, Some(ConsistencyLevel::ALL)).await;
 
     // Batch add references
-    todo!();
-
-    // Batch delete references
-    todo!();
-
-
+    let references = References::new(vec![
+        Reference::new(
+            "Author",
+            &author_uuid,
+            "wroteArticles",
+            "Article",
+            &article_a_uuid,
+        ),
+        Reference::new(
+            "Author",
+            &author_uuid,
+            "wroteArticles",
+            "Article",
+            &article_b_uuid,
+        ),
+    ]);
+    let res = client.batch.references_batch_add(references, Some(ConsistencyLevel::ALL)).await;
+    
     Ok(())
 }
 ```
@@ -380,7 +429,7 @@ async fn classification_endpoints(client: WeaviateClient) -> Result<(), Box<dyn 
 - SI test update
 - CI/CD update
 - Classification endpoints
-- Improvements to the GraphQL query system
+- Improvements to the GraphQL query system (and batch delete match config)
 - Module system for interacting with enabled modules
 - External auth keys in client (for OpenAI, HuggingFace, etc.)
 - Embedded functionality

@@ -505,9 +505,23 @@ impl References {
     ///
     /// # Example
     /// ```rust
+    /// use uuid::Uuid;
     /// use weaviate_community::collections::objects::{References, Reference};
     ///
-    /// todo!();
+    /// let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    /// let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    ///
+    /// let reference = Reference::new(
+    ///     "JeopardyQuestion", 
+    ///     &uuid1,
+    ///     "hasCategory", 
+    ///     "JeopardyCategory",
+    ///     &uuid2,
+    /// );
+
+    /// let references = References::new(
+    ///    vec![reference]
+    /// );
     /// ```
     pub fn new(references: Vec<Reference>) -> References {
         References(references)
@@ -530,9 +544,19 @@ impl Reference {
     ///
     /// # Example
     /// ```rust
+    /// use uuid::Uuid;
     /// use weaviate_community::collections::objects::Reference;
     ///
-    /// todo!();
+    /// let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    /// let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    ///
+    /// let reference = Reference::new(
+    ///     "JeopardyQuestion", 
+    ///     &uuid1,
+    ///     "hasCategory", 
+    ///     "JeopardyCategory",
+    ///     &uuid2,
+    /// );
     /// ```
     pub fn new(
         from_class_name: &str,
@@ -558,9 +582,19 @@ impl Reference {
     ///
     /// # Example
     /// ```rust
+    /// use uuid::Uuid;
     /// use weaviate_community::collections::objects::Reference;
     ///
-    /// todo!();
+    /// let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    /// let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    ///
+    /// let reference = Reference::new(
+    ///     "JeopardyQuestion", 
+    ///     &uuid1,
+    ///     "hasCategory", 
+    ///     "JeopardyCategory",
+    ///     &uuid2,
+    /// );
     /// ```
     pub fn builder(
         from_class_name: &str,
@@ -597,9 +631,19 @@ impl ReferenceBuilder {
     ///
     /// # Example
     /// ```rust
+    /// use uuid::Uuid;
     /// use weaviate_community::collections::objects::ReferenceBuilder;
     ///
-    /// todo!();
+    /// let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    /// let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    ///
+    /// let reference = ReferenceBuilder::new(
+    ///     "JeopardyQuestion", 
+    ///     &uuid1,
+    ///     "hasCategory", 
+    ///     "JeopardyCategory",
+    ///     &uuid2,
+    /// );
     /// ```
     pub fn new(
         from_class_name: &str,
@@ -626,9 +670,19 @@ impl ReferenceBuilder {
     ///
     /// # Example
     /// ```rust
+    /// use uuid::Uuid;
+    /// use weaviate_community::collections::objects::ConsistencyLevel;
     /// use weaviate_community::collections::objects::ReferenceBuilder;
     ///
-    /// todo!();
+    /// let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    /// let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    /// let reference = ReferenceBuilder::new(
+    ///     "JeopardyQuestion", 
+    ///     &uuid1,
+    ///     "hasCategory", 
+    ///     "JeopardyCategory",
+    ///     &uuid2,
+    /// ).with_consistency_level(ConsistencyLevel::ALL).build();
     /// ```
     pub fn with_consistency_level(
         mut self,
@@ -645,15 +699,24 @@ impl ReferenceBuilder {
     ///
     /// # Example
     /// ```rust
+    /// use uuid::Uuid;
     /// use weaviate_community::collections::objects::ReferenceBuilder;
     ///
-    /// todo!();
+    /// let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    /// let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    /// let reference = ReferenceBuilder::new(
+    ///     "JeopardyQuestion", 
+    ///     &uuid1,
+    ///     "hasCategory", 
+    ///     "JeopardyCategory",
+    ///     &uuid2,
+    /// ).with_tenant_name("TENANT_A").build();
     /// ```
     pub fn with_tenant_name(
         mut self,
-        tenant_name: String
+        tenant_name: &str
     ) -> ReferenceBuilder {
-        self.tenant_name = Some(tenant_name);
+        self.tenant_name = Some(tenant_name.into());
         self
     }
 
@@ -662,16 +725,35 @@ impl ReferenceBuilder {
     /// # Example
     /// Using ReferenceBuilder
     /// ```rust
+    /// use uuid::Uuid;
     /// use weaviate_community::collections::objects::ReferenceBuilder;
     ///
-    /// todo!()
+    /// let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    /// let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    /// let reference = ReferenceBuilder::new(
+    ///     "JeopardyQuestion", 
+    ///     &uuid1,
+    ///     "hasCategory", 
+    ///     "JeopardyCategory",
+    ///     &uuid2,
+    /// ).build();
     /// ```
     ///
     /// Using ObjectListParameters
     /// ```rust
+    /// use uuid::Uuid;
     /// use weaviate_community::collections::objects::Reference;
     ///
-    /// todo!()
+    /// let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
+    /// let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    /// let reference = Reference::builder(
+    ///     "JeopardyQuestion", 
+    ///     &uuid1,
+    ///     "hasCategory", 
+    ///     "JeopardyCategory",
+    ///     &uuid2,
+    /// ).build();
+    ///
     /// ```
     pub fn build(self) -> Reference {
         Reference {
