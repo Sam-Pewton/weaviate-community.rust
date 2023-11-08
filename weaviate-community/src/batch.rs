@@ -38,10 +38,16 @@ impl Batch {
                 let res: BatchAddObjects = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(BatchError(format!(
-                "status code {} received.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    BatchError(
+                        format!(
+                            "status code {} received.",
+                            res.status()
+                        )
+                    )
+                )
+            ),
         }
     }
 
@@ -63,14 +69,59 @@ impl Batch {
                 let res: BatchDeleteResponse = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(BatchError(format!(
-                "status code {} received.",
-                res.status()
-            )))),
+            _ => Err(
+                Box::new(
+                    BatchError(
+                        format!(
+                            "status code {} received.",
+                            res.status()
+                        )
+                    )
+                )
+            ),
         }
     }
 
-    pub async fn references_batch_add() -> Result<reqwest::Response, Box<dyn Error>> {
+    pub async fn references_batch_add(
+        references: References
+    ) -> Result<reqwest::Response, Box<dyn Error>> {
+        let payload = serde_json::json!({
+            "beacon": format!("weaviate://localhost/{}/{}", reference.to_class_name, reference.to_uuid),
+        });
+        let mut endpoint: String = reference.from_class_name.into();
+        endpoint.push_str("/");
+        endpoint.push_str(&reference.from_uuid.to_string());
+        endpoint.push_str("/references/");
+        endpoint.push_str(&reference.from_property_name.to_string());
+        let mut endpoint = self.endpoint.join(&endpoint)?;
+        if let Some(cl) = reference.consistency_level {
+            endpoint
+                .query_pairs_mut()
+                .append_pair("consistency_level", &cl.value());
+        }
+        if let Some(t) = reference.tenant_name {
+            // multi tenancy must be enabled first
+            endpoint.query_pairs_mut().append_pair("tenant", &t);
+        }
+
+        let res = self.client.post(endpoint).json(&payload).send().await?;
+        match res.status() {
+            reqwest::StatusCode::OK => {
+                Ok(true)
+            }
+            _ => Err(
+                Box::new(
+                    QueryError(format!(
+                        "status code {} received when calling create object reference endpoint.",
+                        res.status()
+                    ))
+                )
+            ),
+        }
+        todo!()
+    }
+
+    pub async fn references_batch_delete() -> Result<reqwest::Response, Box<dyn Error>> {
         todo!()
     }
 }
@@ -240,5 +291,21 @@ mod tests {
         let res = client.batch.objects_batch_delete(req, None).await;
         mock.assert();
         assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_references_batch_add_ok() {
+    }
+
+    #[tokio::test]
+    async fn test_references_batch_add_err() {
+    }
+
+    #[tokio::test]
+    async fn test_references_batch_delete_ok() {
+    }
+
+    #[tokio::test]
+    async fn test_references_batch_delete_err() {
     }
 }
