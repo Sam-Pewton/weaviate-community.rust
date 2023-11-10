@@ -8,3 +8,4 @@ pub mod oidc;
 pub mod schema;
 pub mod query;
 pub mod nodes;
+pub mod classification;

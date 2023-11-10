@@ -15,7 +15,7 @@ mod schema;
 mod query;
 pub use self::backups::Backups;
 pub use self::batch::Batch;
-pub use self::classification::_Classification;
+pub use self::classification::Classification;
 pub use self::meta::Meta;
 pub use self::modules::_Modules;
 pub use self::nodes::Nodes;
@@ -40,7 +40,7 @@ pub struct WeaviateClient {
     pub objects: Objects,
     pub batch: Batch,
     pub backups: Backups,
-    pub classification: _Classification,
+    pub classification: Classification,
     pub meta: Meta,
     pub nodes: Nodes,
     pub oidc: Oidc,
@@ -103,7 +103,7 @@ impl WeaviateClient {
         let objects = Objects::new(&base, Arc::clone(&client))?;
         let batch = Batch::new(&base, Arc::clone(&client))?;
         let backups = Backups::new(&base, Arc::clone(&client))?;
-        let classification = _Classification::new(&base, Arc::clone(&client))?;
+        let classification = Classification::new(&base, Arc::clone(&client))?;
         let meta = Meta::new(&base, Arc::clone(&client))?;
         let nodes = Nodes::new(&base, Arc::clone(&client))?;
         let oidc = Oidc::new(&base, Arc::clone(&client))?;
