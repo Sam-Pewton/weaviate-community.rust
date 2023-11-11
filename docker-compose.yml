@@ -95,8 +95,6 @@ services:
     image: rust:latest
     container_name: 'tests'
     command: sleep infinity
-    volumes:
-      - .:/app
     networks:
       - cicd
 ...

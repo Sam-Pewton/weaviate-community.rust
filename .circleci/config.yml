@@ -22,6 +22,10 @@ jobs:
             set -x
             docker-compose create weaviate tests && docker-compose start weaviate tests
       - run:
+          name: Add project to test container
+          command: |
+            docker cp ./weaviate-community tests:/weaviate-community
+      - run:
           name: See port bindings
           command: |
             docker ps
