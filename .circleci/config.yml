@@ -13,6 +13,10 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
+          name: DEBUG - LS
+          command: |
+            ls
+      - run:
           name: Start compose
           command: |
             set -x
@@ -21,6 +25,10 @@ jobs:
           name: See port bindings
           command: |
             docker ps
+      - run:
+          name: DEBUG - LS (Container)
+          command: |
+            docker exec -it tests sh -c "ls"
       - run:
           name: Run the --lib tests
           command: |
