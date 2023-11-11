@@ -24,6 +24,10 @@ jobs:
           command: |
             docker cp ./weaviate-community tests:/weaviate-community
       - run:
+          name: Install clippy
+          command: |
+            docker exec -it tests sh -c "rustup component add clippy"
+      - run:
           name: Run clippy
           command: |
             docker exec -it tests sh -c "cd /weaviate-community && cargo clippy"
