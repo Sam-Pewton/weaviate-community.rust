@@ -3,7 +3,8 @@ version: 2.1
 executors:
   my-executor:
     docker:
-      - image: sampewton/circleci-base:latest
+      - image: cimg/base
+        # - image: sampewton/circleci-base:latest
     resource_class: small
 
 jobs:
