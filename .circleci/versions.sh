@@ -73,12 +73,8 @@ fi
 # Check for a new version
 if [ $(semver_compare $CARGO_TOML_VERSION $CURRENT_GIT_VERSION) == "1" ]
 then
-    echo "New version detected"
-    read -p "Deploy new version to crates.io? " -n 1 -r
-    if [ $REPLY =~ ^[Yy]$ ]
-    then
-        echo "TODO"
-    fi
+    echo "New version detected. Deploying new version to crates.io"
+    echo "TODO"
 elif [ $(semver_compare $CARGO_TOML_VERSION $CURRENT_GIT_VERSION) == "-1" ]
 then
     echo "New version is lower than current. New version should be higher."
