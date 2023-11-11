@@ -96,7 +96,7 @@ services:
     container_name: 'tests'
     command: sleep infinity
     volumes:
-      - ./project:/app
+      - .:/app
     networks:
       - cicd
 ...

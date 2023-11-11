@@ -28,7 +28,7 @@ jobs:
       - run:
           name: DEBUG - LS (Container)
           command: |
-            docker exec -it tests sh -c "ls"
+            docker exec -it tests sh -c "ls ./app"
       - run:
           name: Run the --lib tests
           command: |
