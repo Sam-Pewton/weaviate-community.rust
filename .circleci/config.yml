@@ -7,7 +7,7 @@ executors:
     resource_class: small
 
 jobs:
-  setup:
+  test:
     executor: my-executor
     steps:
       - checkout
@@ -21,27 +21,14 @@ jobs:
           name: See port bindings
           command: |
             docker ps
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
-
-  unit-test:
-    steps:
-      - attach_workspace:
-          at: .
       - run:
           name: Run the --lib tests
           command: |
             docker exec -it tests sh -c "cd /app && cargo test --lib"
-
-  si-test:
-    executor: my-executor
-    steps:
       - run:
-          name: Curl the meta endpoint
+          name: Stop Docker compose
           command: |
-            docker exec -it tests 
+            docker-compose down
 
   publish:
     executor: my-executor
@@ -50,22 +37,16 @@ jobs:
           name: Placeholder
           command: |
             echo "This will publish the latest version to crates.io and tag the repo eventually"
-      - run:
-          name: Stop Docker compose
-          command: |
-            docker-compose down
 
 workflows:
   version: 2
   weaviate-community:
     jobs:
       - setup
-      - unit-test:
-          requires:
-            - setup
+      - test:
       - publish:
           requires:
-            - unit-test
+            - test
           filters:
             branches:
               only:
