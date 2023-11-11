@@ -26,7 +26,7 @@ jobs:
       - run:
           name: Run clippy
           command: |
-            docker exec -it tests sh -c "cd /weaviate-community && cargo clippy
+            docker exec -it tests sh -c "cd /weaviate-community && cargo clippy"
       - run:
           name: Stop Docker compose
           command: |
