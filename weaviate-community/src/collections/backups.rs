@@ -85,10 +85,10 @@ impl BackupCreateRequestBuilder {
     /// let builder = BackupCreateRequestBuilder::new("my-backup");
     /// ```
     pub fn new(id: &str) -> BackupCreateRequestBuilder {
-        BackupCreateRequestBuilder { 
+        BackupCreateRequestBuilder {
             id: id.into(),
             include: None,
-            exclude: None
+            exclude: None,
         }
     }
 
@@ -194,9 +194,12 @@ impl BackupRestoreRequestBuilder {
     /// let builder = BackupRestoreRequestBuilder::new();
     /// ```
     pub fn new() -> BackupRestoreRequestBuilder {
-        BackupRestoreRequestBuilder { include: None, exclude: None }
+        BackupRestoreRequestBuilder {
+            include: None,
+            exclude: None,
+        }
     }
-     
+
     /// Add a value to the optional `include` value of the BackupCreateRequest.
     ///
     /// # Parameters
@@ -278,7 +281,6 @@ pub struct BackupStatusResponse {
     pub path: Option<String>,
     pub status: BackupStatus,
 }
-
 
 /// The general backup response.
 ///

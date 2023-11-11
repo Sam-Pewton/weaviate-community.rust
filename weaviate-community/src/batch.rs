@@ -3,7 +3,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use crate::collections::{
-    batch::{BatchAddObjects, BatchDeleteRequest, BatchDeleteResponse, BatchAddReferencesResponse},
+    batch::{BatchAddObjects, BatchAddReferencesResponse, BatchDeleteRequest, BatchDeleteResponse},
     error::BatchError,
     objects::{ConsistencyLevel, MultiObjects, References},
 };
@@ -36,7 +36,7 @@ impl Batch {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///
     ///     let author_uuid = Uuid::parse_str("36ddd591-2dee-4e7e-a3cc-eb86d30a4303").unwrap();
     ///     let article_a_uuid = Uuid::parse_str("6bb06a43-e7f0-393e-9ecf-3c0f4e129064").unwrap();
@@ -79,16 +79,10 @@ impl Batch {
                 let res: BatchAddObjects = res.json().await?;
                 Ok(res)
             }
-            _ => Err(
-                Box::new(
-                    BatchError(
-                        format!(
-                            "status code {} received.",
-                            res.status()
-                        )
-                    )
-                )
-            ),
+            _ => Err(Box::new(BatchError(format!(
+                "status code {} received.",
+                res.status()
+            )))),
         }
     }
 
@@ -107,7 +101,7 @@ impl Batch {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let req = BatchDeleteRequest::builder(
     ///         MatchConfig::new(
     ///             "Article",
@@ -142,16 +136,10 @@ impl Batch {
                 let res: BatchDeleteResponse = res.json().await?;
                 Ok(res)
             }
-            _ => Err(
-                Box::new(
-                    BatchError(
-                        format!(
-                            "status code {} received.",
-                            res.status()
-                        )
-                    )
-                )
-            ),
+            _ => Err(Box::new(BatchError(format!(
+                "status code {} received.",
+                res.status()
+            )))),
         }
     }
 
@@ -172,7 +160,7 @@ impl Batch {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///
     ///     let author_uuid = Uuid::parse_str("36ddd591-2dee-4e7e-a3cc-eb86d30a4303").unwrap();
     ///     let article_a_uuid = Uuid::parse_str("6bb06a43-e7f0-393e-9ecf-3c0f4e129064").unwrap();
@@ -226,7 +214,7 @@ impl Batch {
             converted.push(new_ref);
         }
         let payload = serde_json::json!(converted);
-        
+
         let mut endpoint = self.endpoint.join("references")?;
         if let Some(cl) = consistency_level {
             endpoint
@@ -237,20 +225,13 @@ impl Batch {
         let res = self.client.post(endpoint).json(&payload).send().await?;
         match res.status() {
             reqwest::StatusCode::OK => {
-                println!("{:#?}", res);
                 let res: BatchAddReferencesResponse = res.json().await?;
                 Ok(res)
             }
-            _ => Err(
-                Box::new(
-                    BatchError(
-                        format!(
-                            "status code {} received.",
-                            res.status()
-                        )
-                    )
-                )
-            ),
+            _ => Err(Box::new(BatchError(format!(
+                "status code {} received.",
+                res.status()
+            )))),
         }
     }
 }
@@ -260,20 +241,15 @@ mod tests {
     use uuid::Uuid;
 
     use crate::{
+        collections::objects::{MultiObjects, Object},
+        collections::{
+            batch::{
+                BatchAddObject, BatchDeleteRequest, BatchDeleteResponse, BatchDeleteResult,
+                GeneralStatus, MatchConfig, ResultStatus,
+            },
+            objects::{Reference, References},
+        },
         WeaviateClient,
-        collections::{batch::{
-            BatchDeleteRequest,
-            MatchConfig,
-            BatchAddObject,
-            BatchDeleteResponse,
-            BatchDeleteResult,
-            ResultStatus,
-            GeneralStatus,
-        }, objects::{Reference, References}},
-        collections::objects::{
-            MultiObjects,
-            Object,
-        }
     };
 
     fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
@@ -290,18 +266,16 @@ mod tests {
             "number": 123,
         });
         MultiObjects {
-            objects: vec![
-                Object {
-                    class: "Test".into(),
-                    properties,
-                    id: Some(Uuid::new_v4()),
-                    vector: None,
-                    tenant: None,
-                    creation_time_unix: None,
-                    last_update_time_unix: None,
-                    vector_weights: None,
-                },
-            ],
+            objects: vec![Object {
+                class: "Test".into(),
+                properties,
+                id: Some(Uuid::new_v4()),
+                vector: None,
+                tenant: None,
+                creation_time_unix: None,
+                last_update_time_unix: None,
+                vector_weights: None,
+            }],
         }
     }
 
@@ -319,8 +293,11 @@ mod tests {
             creation_time_unix: None,
             last_update_time_unix: None,
             vector_weights: None,
-            result: ResultStatus { status: GeneralStatus::SUCCESS },
-        }]).unwrap()
+            result: ResultStatus {
+                status: GeneralStatus::SUCCESS,
+            },
+        }])
+        .unwrap()
     }
 
     fn test_delete_objects() -> BatchDeleteRequest {
@@ -349,7 +326,7 @@ mod tests {
                 successful: 1,
                 failed: 0,
                 objects: None,
-            }
+            },
         }
     }
 
@@ -358,20 +335,8 @@ mod tests {
         let uuid2 = Uuid::parse_str("6bb06a43-e7f0-393e-9ecf-3c0f4e129064").unwrap();
         let uuid3 = Uuid::parse_str("b72912b9-e5d7-304e-a654-66dc63c55b32").unwrap();
         References::new(vec![
-            Reference::new(
-                "Test",
-                &uuid,
-                "testProp",
-                "Other",
-                &uuid2,
-            ),
-            Reference::new(
-                "Test",
-                &uuid,
-                "testProp",
-                "Other",
-                &uuid3,
-            ),
+            Reference::new("Test", &uuid, "testProp", "Other", &uuid2),
+            Reference::new("Test", &uuid, "testProp", "Other", &uuid3),
         ])
     }
 
@@ -387,16 +352,18 @@ mod tests {
                 },
                 "status": "FAILED"
             }
-        }])).unwrap()
+        }]))
+        .unwrap()
     }
 
     fn mock_post(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("POST", endpoint)
+        server
+            .mock("POST", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
@@ -409,7 +376,8 @@ mod tests {
         status_code: usize,
         body: &str,
     ) -> mockito::Mock {
-        server.mock("DELETE", endpoint)
+        server
+            .mock("DELETE", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
