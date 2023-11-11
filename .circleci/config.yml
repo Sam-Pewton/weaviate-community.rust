@@ -52,17 +52,14 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Show current tag
+          name: Show current branch
           command: |
-            echo "export CURRENT_GIT_TAG=git describe --tags | sed 's/v//'" >> "$BASH_ENV"
+            echo ${CIRCLE_BRANCH} |
+            cut -f1 -d "-"
       - run:
-          name: Show crates.io version
+          name: Check versions
           command: |
-            echo "export CARGO_TOML_VERSION=cat ./weaviate-community/Cargo.toml | grep 'version = ' | head -1 | awk '{ print $3 }' | sed 's/\"//g'" >> "$BASH_ENV"
-      - run:
-          name: Check version
-          command: |
-            echo $CURRENT_GIT_TAG
+            bash .circleci/versions.sh
 
 workflows:
   version: 2
