@@ -55,7 +55,7 @@ semver_compare() {
 }
 
 
-export CURRENT_GIT_VERSION=$(git describe --tags | sed 's/v//' | cut -f1 -d '-')
+export CURRENT_GIT_VERSION=$(git tag -l | tail -1 | sed 's/v//' | cut -f1 -d '-')
 export CARGO_TOML_VERSION=$(cat ./weaviate-community/Cargo.toml | grep 'version = ' | head -1 | awk '{ print $3 }' | sed 's/"//g')
 export README_VERSION=$(cat README.md | grep "weaviate-community = " | cut -f2 -d '"')
 
