@@ -32,7 +32,7 @@ jobs:
       - run:
           name: DEBUG - LS (Container)
           command: |
-            docker exec -it tests sh -c "ls ./app"
+            docker exec -it tests sh -c "ls ./weaviate-community"
       - run:
           name: Run the --lib tests
           command: |
