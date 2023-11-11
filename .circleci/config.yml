@@ -42,8 +42,7 @@ workflows:
   version: 2
   weaviate-community:
     jobs:
-      - setup
-      - test:
+      - test
       - publish:
           requires:
             - test
