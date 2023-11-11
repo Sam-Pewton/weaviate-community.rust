@@ -25,6 +25,11 @@ jobs:
   unit-test:
     executor: my-executor
     steps:
+      - run:
+          name: Run the --lib tests
+          command: |
+            docker exec -it tests sh -c "cd /app && cargo test --lib"
+
   si-test:
     executor: my-executor
     steps:
