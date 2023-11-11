@@ -1,15 +1,17 @@
 ---
 version: 2.1
-executors:
-  my-executor:
-    docker:
-      - image: cimg/base
-        # - image: sampewton/circleci-base:latest
-    resource_class: small
+  # executors:
+  #   my-executor:
+  #     docker:
+  #       - image: cimg/base
+  #         # - image: sampewton/circleci-base:latest
+  #     resource_class: small
 
 jobs:
   test:
-    executor: my-executor
+    # executor: my-executor
+    docker:
+      - image: cimg/base
     steps:
       - checkout
       - setup_remote_docker
@@ -40,7 +42,9 @@ jobs:
       #       docker-compose down
 
   publish:
-    executor: my-executor
+    # executor: my-executor
+    docker:
+      - image: cimg/base
     steps:
       - checkout
       - run:
