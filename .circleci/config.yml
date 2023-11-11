@@ -1,14 +1,16 @@
 ---
 version: 2.1
-executors:
-  my-executor:
-    docker:
-      - image: sampewton/circleci-base:latest
-    resource_class: small
+  # executors:
+  #   my-executor:
+  #     docker:
+  #       - image: cimg/base
+  #         # - image: sampewton/circleci-base:latest
+  #     resource_class: small
 
 jobs:
-  si-test:
-    executor: my-executor
+  lint:
+    docker:
+      - image: cimg/base:stable
     steps:
       - checkout
       - setup_remote_docker
@@ -16,37 +18,86 @@ jobs:
           name: Start compose
           command: |
             set -x
-            docker-compose up -d
+            docker-compose create tests && docker-compose start tests
+      - run:
+          name: Add project to test container
+          command: |
+            docker cp ./weaviate-community tests:/weaviate-community
+      - run:
+          name: Install clippy
+          command: |
+            docker exec -it tests sh -c "rustup component add clippy"
+      - run:
+          name: Run clippy
+          command: |
+            docker exec -it tests sh -c "cd /weaviate-community && cargo clippy"
+      - run:
+          name: Stop Docker compose
+          command: |
+            docker-compose down
+    
+  test:
+    # executor: my-executor
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Start compose
+          command: |
+            set -x
+            docker-compose create weaviate tests && docker-compose start weaviate tests
+      - run:
+          name: Add project to test container
+          command: |
+            docker cp ./weaviate-community tests:/weaviate-community
       - run:
           name: See port bindings
           command: |
             docker ps
       - run:
-          name: Curl the meta endpoint
+          name: Run the --lib tests
           command: |
-            docker exec -it si-tests curl weaviate:8080/v1/meta
+            docker exec -it tests sh -c "cd /weaviate-community && cargo test --lib"
+      - run:
+          name: Run the --doc tests
+          command: |
+            docker exec -it tests sh -c "cd /weaviate-community && cargo test --doc"
+      - run:
+          name: Run the SI tests (when running on master branch)
+          command: |
+            echo TODO
       - run:
           name: Stop Docker compose
           command: |
             docker-compose down
+
   publish:
-    executor: my-executor
+    # executor: my-executor
+    docker:
+      - image: cimg/base:stable
     steps:
       - checkout
-      - setup_remote_docker
       - run:
-          name: Placeholder
+          name: Show current branch
           command: |
-            echo "This will publish the latest version to crates.io and tag the repo eventually"
+            echo ${CIRCLE_BRANCH} |
+            cut -f1 -d "-"
+      - run:
+          name: Check versions
+          command: |
+            bash .circleci/versions.sh
 
 workflows:
   version: 2
   weaviate-community:
     jobs:
-      - si-test
+      - lint
+      - test
       - publish:
           requires:
-            - si-test
+            - test
           filters:
             branches:
               only:
