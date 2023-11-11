@@ -59,20 +59,26 @@ export CURRENT_GIT_VERSION=$(git describe --tags | sed 's/v//' | cut -f1 -d '-')
 export CARGO_TOML_VERSION=$(cat ./weaviate-community/Cargo.toml | grep 'version = ' | head -1 | awk '{ print $3 }' | sed 's/"//g')
 export README_VERSION=$(cat README.md | grep "weaviate-community = " | cut -f2 -d '"')
 
-echo $CURRENT_GIT_VERSION
-echo $CARGO_TOML_VERSION
-echo $README_VERSION
+echo "CURRENT_GIT_VERSION: $CURRENT_GIT_VERSION"
+echo "CARGO_TOML_VERSION: $CARGO_TOML_VERSION"
+echo "README_VERSION: $README_VERSION"
 
+# Check that the README is updated
 if [ $CARGO_TOML_VERSION != $README_VERSION ]
 then
     echo "README version should match the Cargo.toml version"
     exit 1
 fi
 
+# Check for a new version
 if [ $(semver_compare $CARGO_TOML_VERSION $CURRENT_GIT_VERSION) == "1" ]
 then
-    echo "New version detected, deploying new version to crates.io"
-    echo "TODO"
+    echo "New version detected"
+    read -p "Deploy new version to crates.io? " -n 1 -r
+    if [ $REPLY =~ ^[Yy]$ ]
+    then
+        echo "TODO"
+    fi
 elif [ $(semver_compare $CARGO_TOML_VERSION $CURRENT_GIT_VERSION) == "-1" ]
 then
     echo "New version is lower than current. New version should be higher."
