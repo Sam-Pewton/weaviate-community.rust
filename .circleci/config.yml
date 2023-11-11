@@ -13,10 +13,6 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: DEBUG - LS
-          command: |
-            ls
-      - run:
           name: Start compose
           command: |
             set -x
@@ -30,13 +26,13 @@ jobs:
           command: |
             docker ps
       - run:
-          name: DEBUG - LS (Container)
-          command: |
-            docker exec -it tests sh -c "ls ./weaviate-community"
-      - run:
           name: Run the --lib tests
           command: |
-            docker exec -it tests sh -c "cd /app/weaviate-community && cargo test --lib"
+            docker exec -it tests sh -c "cd /weaviate-community && cargo test --lib"
+      - run:
+          name: Run the --doc tests
+          command: |
+            docker exec -it tests sh -c "cd /weaviate-community && cargo test --doc"
       - run:
           name: Stop Docker compose
           command: |
