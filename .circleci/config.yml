@@ -21,10 +21,15 @@ jobs:
           name: See port bindings
           command: |
             docker ps
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
 
   unit-test:
-    executor: my-executor
     steps:
+      - attach_workspace:
+          at: .
       - run:
           name: Run the --lib tests
           command: |
