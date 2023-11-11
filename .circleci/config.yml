@@ -11,7 +11,7 @@ jobs:
   test:
     # executor: my-executor
     docker:
-      - image: cimg/base
+      - image: cimg/base:stable
     steps:
       - checkout
       - setup_remote_docker
@@ -44,7 +44,7 @@ jobs:
   publish:
     # executor: my-executor
     docker:
-      - image: cimg/base
+      - image: cimg/base:stable
     steps:
       - checkout
       - run:
