@@ -1,5 +1,7 @@
 use crate::collections::error::QueryError;
-use crate::collections::objects::{ConsistencyLevel, Object, MultiObjects, ObjectListParameters, Reference};
+use crate::collections::objects::{
+    ConsistencyLevel, MultiObjects, Object, ObjectListParameters, Reference,
+};
 use reqwest::Url;
 use std::{error::Error, sync::Arc};
 use uuid::Uuid;
@@ -33,7 +35,7 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///
     ///     //let params = ObjectListParameters::builder().with_class_name("MyClass").build();
     ///     let params = ObjectListParameters::new();
@@ -43,7 +45,7 @@ impl Objects {
     /// ```
     pub async fn list(
         &self,
-        parameters: ObjectListParameters
+        parameters: ObjectListParameters,
     ) -> Result<MultiObjects, Box<dyn Error>> {
         let mut endpoint = self.endpoint.clone();
 
@@ -62,44 +64,28 @@ impl Objects {
                 .append_pair("offset", &o.to_string());
             // Raise an err if after is some
             if parameters.after.is_some() {
-                return Err(
-                    Box::new(
-                        QueryError(
-                            "'after' must be None when 'offset' is Some".into(),
-                        )
-                    )
-                );
+                return Err(Box::new(QueryError(
+                    "'after' must be None when 'offset' is Some".into(),
+                )));
             }
         }
         if let Some(a) = &parameters.after {
             endpoint.query_pairs_mut().append_pair("after", &a);
             if parameters.after.is_none() {
-                return Err(
-                    Box::new(
-                        QueryError(
-                            "'class' must be Some when 'after' is Some".into(),
-                        )
-                    )
-                );
+                return Err(Box::new(QueryError(
+                    "'class' must be Some when 'after' is Some".into(),
+                )));
             }
             // raise an error if offset or sort are some
             if parameters.offset.is_some() {
-                return Err(
-                    Box::new(
-                        QueryError(
-                            "'offset' must be None when 'after' is Some".into(),
-                        )
-                    )
-                );
+                return Err(Box::new(QueryError(
+                    "'offset' must be None when 'after' is Some".into(),
+                )));
             }
             if parameters.sort.is_some() {
-                return Err(
-                    Box::new(
-                        QueryError(
-                            "'sort' must be None when 'after' is Some".into(),
-                        )
-                    )
-                );
+                return Err(Box::new(QueryError(
+                    "'sort' must be None when 'after' is Some".into(),
+                )));
             }
         }
         if let Some(i) = parameters.include {
@@ -120,15 +106,10 @@ impl Objects {
                 let res: MultiObjects = res.json().await?;
                 Ok(res)
             }
-            _ => Err(
-                Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling list objects endpoint.",
-                        res.status()
-                        )
-                    )
-                )
-            ),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling list objects endpoint.",
+                res.status()
+            )))),
         }
     }
 
@@ -148,7 +129,7 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let properties = serde_json::json!({
     ///         "name": "Jodi Kantor",
     ///     });
@@ -188,14 +169,10 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(
-                Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling create object endpoint.",
-                        res.status()
-                    ))
-                )
-            ),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling create object endpoint.",
+                res.status()
+            )))),
         }
     }
 
@@ -215,7 +192,7 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let uuid = Uuid::parse_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303").unwrap();
     ///     let res = client
     ///         .objects
@@ -255,14 +232,10 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(
-                Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling get object endpoint.",
-                        res.status()
-                    ))
-                )
-            ),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling get object endpoint.",
+                res.status()
+            )))),
         }
     }
 
@@ -283,7 +256,7 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let uuid = Uuid::parse_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303").unwrap();
     ///     let res = client
     ///         .objects
@@ -314,19 +287,11 @@ impl Objects {
 
         let res = self.client.head(endpoint).send().await?;
         match res.status() {
-            reqwest::StatusCode::NO_CONTENT => {
-                Ok(true)
-            }
-            _ => Err(
-                Box::new(
-                    QueryError(
-                        format!(
-                            "status code {} received when calling exists (object) endpoint.",
-                            res.status()
-                        )
-                    )
-                )
-            ),
+            reqwest::StatusCode::NO_CONTENT => Ok(true),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling exists (object) endpoint.",
+                res.status()
+            )))),
         }
     }
 
@@ -342,7 +307,7 @@ impl Objects {
     /// - class_name: the name of the class the object belongs to
     /// - id: the uuid of the object
     /// - consistency_level: the consistency_level of the object
-    /// 
+    ///
     /// # Example
     /// ```
     /// use uuid::Uuid;
@@ -350,7 +315,7 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let uuid = Uuid::parse_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303").unwrap();
     ///     let properties = serde_json::json!({
     ///         "name": "new name",
@@ -379,19 +344,11 @@ impl Objects {
         }
         let res = self.client.patch(endpoint).json(&properties).send().await?;
         match res.status() {
-            reqwest::StatusCode::NO_CONTENT => {
-                Ok(true)
-            }
-            _ => Err(
-                Box::new(
-                    QueryError(
-                        format!(
-                            "status code {} received when calling update object endpoint.",
-                            res.status()
-                        )
-                    )
-                )
-            ),
+            reqwest::StatusCode::NO_CONTENT => Ok(true),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling update object endpoint.",
+                res.status()
+            )))),
         }
     }
 
@@ -415,7 +372,7 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let uuid = Uuid::parse_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303").unwrap();
     ///     let properties = serde_json::json!({
     ///         "properties": {
@@ -456,16 +413,10 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(
-                Box::new(
-                    QueryError(
-                        format!(
-                            "status code {} received when calling update class endpoint.",
-                            res.status()
-                        )
-                    )
-                )
-            ),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling update class endpoint.",
+                res.status()
+            )))),
         }
     }
 
@@ -484,7 +435,7 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let uuid = Uuid::parse_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd303").unwrap();
     ///     let res = client
     ///         .objects
@@ -516,19 +467,11 @@ impl Objects {
 
         let res = self.client.delete(endpoint).send().await?;
         match res.status() {
-            reqwest::StatusCode::NO_CONTENT => {
-                Ok(true)
-            }
-            _ => Err(
-                Box::new(
-                    QueryError(
-                        format!(
-                            "status code {} received when calling delete object endpoint.",
-                            res.status()
-                        )
-                    )
-                )
-            ),
+            reqwest::StatusCode::NO_CONTENT => Ok(true),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling delete object endpoint.",
+                res.status()
+            )))),
         }
     }
 
@@ -546,7 +489,7 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let properties = serde_json::json!({
     ///         "name": "New York Times"
     ///     });
@@ -570,19 +513,11 @@ impl Objects {
 
         let res = self.client.post(endpoint).json(&payload).send().await?;
         match res.status() {
-            reqwest::StatusCode::OK => {
-                Ok(true)
-            }
-            _ => Err(
-                Box::new(
-                    QueryError(
-                        format!(
-                            "status code {} received when calling validate object endpoint.",
-                            res.status()
-                        )
-                    )
-                )
-            ),
+            reqwest::StatusCode::OK => Ok(true),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling validate object endpoint.",
+                res.status()
+            )))),
         }
     }
 
@@ -608,14 +543,14 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
-    ///     let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
-    ///     let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
+    ///     let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012")?;
+    ///     let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef")?;
     ///
     ///     let reference = Reference::new(
-    ///         "JeopardyQuestion", 
+    ///         "JeopardyQuestion",
     ///         &uuid1,
-    ///         "hasCategory", 
+    ///         "hasCategory",
     ///         "JeopardyCategory",
     ///         &uuid2,
     ///     );
@@ -625,10 +560,7 @@ impl Objects {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn reference_add(
-        &self,
-        reference: Reference,
-    ) -> Result<bool, Box<dyn Error>> {
+    pub async fn reference_add(&self, reference: Reference) -> Result<bool, Box<dyn Error>> {
         let payload = serde_json::json!({
             "beacon": format!("weaviate://localhost/{}/{}", reference.to_class_name, reference.to_uuid),
         });
@@ -650,21 +582,15 @@ impl Objects {
 
         let res = self.client.post(endpoint).json(&payload).send().await?;
         match res.status() {
-            reqwest::StatusCode::OK => {
-                Ok(true)
-            }
-            _ => Err(
-                Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling create object reference endpoint.",
-                        res.status()
-                    ))
-                )
-            ),
+            reqwest::StatusCode::OK => Ok(true),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling create object reference endpoint.",
+                res.status()
+            )))),
         }
     }
 
-    /// Update all references in a specified property of an object specified by its class name and 
+    /// Update all references in a specified property of an object specified by its class name and
     /// id.
     ///
     /// Requires the same length of to_class_names as to_uuids as input.
@@ -685,14 +611,14 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
     ///     let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
     ///
     ///     let res = client.objects.reference_update(
-    ///         "JeopardyQuestion", 
+    ///         "JeopardyQuestion",
     ///         &uuid1,
-    ///         "hasCategory", 
+    ///         "hasCategory",
     ///         vec!["JeopardyCategory"],
     ///         vec![&uuid2],
     ///         None,
@@ -712,20 +638,18 @@ impl Objects {
         consistency_level: Option<ConsistencyLevel>,
         tenant_name: Option<&str>,
     ) -> Result<Object, Box<dyn Error>> {
-
         if to_class_names.len() != to_uuids.len() {
             return Err(Box::new(QueryError(
-                "to_class_names.len() must equal to_uuids.len().".into()
-            )))
+                "to_class_names.len() must equal to_uuids.len().".into(),
+            )));
         }
 
         // Match the class names to the id's in the beacon format
         let mut beacons = Vec::new();
         for (class_name, id) in to_class_names.iter().zip(to_uuids.iter()) {
-                beacons.push(serde_json::json!({
-                    "beacon": format!("weaviate://localhost/{}/{}", class_name, id)
-                })
-            );
+            beacons.push(serde_json::json!({
+                "beacon": format!("weaviate://localhost/{}/{}", class_name, id)
+            }));
         }
         let payload = serde_json::json!(beacons);
 
@@ -751,14 +675,10 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(
-                Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling update object reference endpoint.",
-                        res.status()
-                    ))
-                )
-            ),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling update object reference endpoint.",
+                res.status()
+            )))),
         }
     }
 
@@ -783,14 +703,14 @@ impl Objects {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let uuid1 = Uuid::parse_str("12345678-1234-1234-1234-123456789012").unwrap();
     ///     let uuid2 = Uuid::parse_str("20ffc68d-986b-5e71-a680-228dba18d7ef").unwrap();
     ///
     ///     let reference = Reference::new(
-    ///         "JeopardyQuestion", 
+    ///         "JeopardyQuestion",
     ///         &uuid1,
-    ///         "hasCategory", 
+    ///         "hasCategory",
     ///         "JeopardyCategory",
     ///         &uuid2,
     ///     );
@@ -800,10 +720,7 @@ impl Objects {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn reference_delete(
-        &self,
-        reference: Reference
-    ) -> Result<bool, Box<dyn Error>> {
+    pub async fn reference_delete(&self, reference: Reference) -> Result<bool, Box<dyn Error>> {
         let payload = serde_json::json!({
             "beacon": format!("weaviate://localhost/{}/{}", reference.to_class_name, reference.to_uuid),
         });
@@ -825,17 +742,11 @@ impl Objects {
 
         let res = self.client.delete(endpoint).json(&payload).send().await?;
         match res.status() {
-            reqwest::StatusCode::NO_CONTENT => {
-                Ok(true)
-            }
-            _ => Err(
-                Box::new(
-                    QueryError(format!(
-                        "status code {} received when calling delete class reference endpoint.",
-                        res.status()
-                    ))
-                )
-            ),
+            reqwest::StatusCode::NO_CONTENT => Ok(true),
+            _ => Err(Box::new(QueryError(format!(
+                "status code {} received when calling delete class reference endpoint.",
+                res.status()
+            )))),
         }
     }
 }
@@ -845,8 +756,8 @@ mod tests {
     use uuid::Uuid;
 
     use crate::{
-        WeaviateClient, 
-        collections::objects::{Object, ObjectListParameters, MultiObjects, Reference}
+        collections::objects::{MultiObjects, Object, ObjectListParameters, Reference},
+        WeaviateClient,
     };
 
     fn test_object(class_name: &str) -> Object {
@@ -862,13 +773,7 @@ mod tests {
     }
 
     fn test_reference(uuid: &Uuid, uuid_2: &Uuid) -> Reference {
-        Reference::new(
-            "Test",
-            uuid,
-            "testProperty",
-            "TestTwo",
-            uuid_2,
-        )
+        Reference::new("Test", uuid, "testProperty", "TestTwo", uuid_2)
     }
 
     fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
@@ -883,9 +788,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("POST", endpoint)
+        server
+            .mock("POST", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
@@ -896,9 +802,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("PUT", endpoint)
+        server
+            .mock("PUT", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
@@ -909,9 +816,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("PATCH", endpoint)
+        server
+            .mock("PATCH", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
@@ -922,9 +830,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("HEAD", endpoint)
+        server
+            .mock("HEAD", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
@@ -935,9 +844,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("GET", endpoint)
+        server
+            .mock("GET", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
@@ -949,7 +859,8 @@ mod tests {
         endpoint: &str,
         status_code: usize,
     ) -> mockito::Mock {
-        server.mock("DELETE", endpoint)
+        server
+            .mock("DELETE", endpoint)
             .with_status(status_code)
             .create()
     }
@@ -1056,7 +967,10 @@ mod tests {
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
         let mock = mock_patch(&mut mock_server, &url, 204, "");
-        let res = client.objects.update(&serde_json::json![{}], "Test", &uuid, None).await;
+        let res = client
+            .objects
+            .update(&serde_json::json![{}], "Test", &uuid, None)
+            .await;
         mock.assert();
         assert!(res.is_ok());
     }
@@ -1068,7 +982,10 @@ mod tests {
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
         let mock = mock_patch(&mut mock_server, &url, 422, "");
-        let res = client.objects.update(&serde_json::json![{}], "Test", &uuid, None).await;
+        let res = client
+            .objects
+            .update(&serde_json::json![{}], "Test", &uuid, None)
+            .await;
         mock.assert();
         assert!(res.is_err());
     }
@@ -1082,7 +999,10 @@ mod tests {
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
         let mock = mock_put(&mut mock_server, &url, 200, &object_str);
-        let res = client.objects.replace(&serde_json::json![{}], "Test", &uuid, None).await;
+        let res = client
+            .objects
+            .replace(&serde_json::json![{}], "Test", &uuid, None)
+            .await;
         mock.assert();
         assert!(res.is_ok());
     }
@@ -1094,7 +1014,10 @@ mod tests {
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
         let mock = mock_put(&mut mock_server, &url, 422, "");
-        let res = client.objects.replace(&serde_json::json![{}], "Test", &uuid, None).await;
+        let res = client
+            .objects
+            .replace(&serde_json::json![{}], "Test", &uuid, None)
+            .await;
         mock.assert();
         assert!(res.is_err());
     }
@@ -1128,7 +1051,10 @@ mod tests {
         let (mut mock_server, client) = get_test_harness();
         let uuid = Uuid::new_v4();
         let mock = mock_post(&mut mock_server, "/v1/objects/validate", 200, "");
-        let res = client.objects.validate("Test", &serde_json::json![{}], &uuid).await;
+        let res = client
+            .objects
+            .validate("Test", &serde_json::json![{}], &uuid)
+            .await;
         mock.assert();
         assert!(res.is_ok());
     }
@@ -1138,7 +1064,10 @@ mod tests {
         let (mut mock_server, client) = get_test_harness();
         let uuid = Uuid::new_v4();
         let mock = mock_post(&mut mock_server, "/v1/objects/validate", 404, "");
-        let res = client.objects.validate("Test", &serde_json::json![{}], &uuid).await;
+        let res = client
+            .objects
+            .validate("Test", &serde_json::json![{}], &uuid)
+            .await;
         mock.assert();
         assert!(res.is_err());
     }
@@ -1152,9 +1081,10 @@ mod tests {
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
         let mock = mock_post(&mut mock_server, &url, 200, "");
-        let res = client.objects.reference_add(
-            test_reference(&uuid, &uuid_2)
-        ).await;
+        let res = client
+            .objects
+            .reference_add(test_reference(&uuid, &uuid_2))
+            .await;
         mock.assert();
         assert!(res.is_ok());
         assert!(res.unwrap());
@@ -1169,9 +1099,10 @@ mod tests {
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
         let mock = mock_post(&mut mock_server, &url, 404, "");
-        let res = client.objects.reference_add(
-            test_reference(&uuid, &uuid_2)
-        ).await;
+        let res = client
+            .objects
+            .reference_add(test_reference(&uuid, &uuid_2))
+            .await;
         mock.assert();
         assert!(res.is_err());
     }
@@ -1187,15 +1118,18 @@ mod tests {
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
         let mock = mock_put(&mut mock_server, &url, 200, &object_str);
-        let res = client.objects.reference_update(
-            "Test",
-            &uuid,
-            "testProperty",
-            vec!["TestTwo"],
-            vec![&uuid_2],
-            None,
-            None,
-        ).await;
+        let res = client
+            .objects
+            .reference_update(
+                "Test",
+                &uuid,
+                "testProperty",
+                vec!["TestTwo"],
+                vec![&uuid_2],
+                None,
+                None,
+            )
+            .await;
         mock.assert();
         assert!(res.is_ok());
     }
@@ -1209,15 +1143,18 @@ mod tests {
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
         let mock = mock_put(&mut mock_server, &url, 404, "");
-        let res = client.objects.reference_update(
-            "Test",
-            &uuid,
-            "testProperty",
-            vec!["TestTwo"],
-            vec![&uuid_2],
-            None,
-            None,
-        ).await;
+        let res = client
+            .objects
+            .reference_update(
+                "Test",
+                &uuid,
+                "testProperty",
+                vec!["TestTwo"],
+                vec![&uuid_2],
+                None,
+                None,
+            )
+            .await;
         mock.assert();
         assert!(res.is_err());
     }
@@ -1231,9 +1168,10 @@ mod tests {
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
         let mock = mock_delete(&mut mock_server, &url, 204);
-        let res = client.objects.reference_delete(
-            test_reference(&uuid, &uuid_2)
-        ).await;
+        let res = client
+            .objects
+            .reference_delete(test_reference(&uuid, &uuid_2))
+            .await;
         mock.assert();
         assert!(res.is_ok());
         assert!(res.unwrap());
@@ -1248,11 +1186,11 @@ mod tests {
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
         let mock = mock_delete(&mut mock_server, &url, 404);
-        let res = client.objects.reference_delete(
-            test_reference(&uuid, &uuid_2)
-        ).await;
+        let res = client
+            .objects
+            .reference_delete(test_reference(&uuid, &uuid_2))
+            .await;
         mock.assert();
         assert!(res.is_err());
     }
-
 }

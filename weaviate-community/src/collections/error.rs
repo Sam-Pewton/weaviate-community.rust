@@ -88,7 +88,7 @@ impl Display for NodesError {
     }
 }
 
-/// Custom ClassificationError, used when there was an incorrect status code for the 
+/// Custom ClassificationError, used when there was an incorrect status code for the
 /// classification endpoint.
 #[derive(Debug)]
 pub struct ClassificationError(pub String);

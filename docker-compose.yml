@@ -51,9 +51,9 @@ services:
     - --scheme
     - http
     image: semitechnologies/weaviate:1.21.3
-    container_name: 'weaviate'
+    container_name: 'weaviate-local'
     ports:
-    - 8081:8081
+    - 8080:8080
     restart: on-failure:0
     environment:
       QUERY_DEFAULTS_LIMIT: 25

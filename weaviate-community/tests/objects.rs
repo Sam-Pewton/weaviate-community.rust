@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use uuid::Uuid;
-use weaviate_community::collections::objects::{ConsistencyLevel, Object};
 use weaviate_community::collections::auth::AuthApiKey;
+use weaviate_community::collections::objects::{ConsistencyLevel, Object};
 use weaviate_community::WeaviateClient;
 
 fn test_object(class_name: &str, id: Option<Uuid>) -> Object {
@@ -43,7 +43,7 @@ async fn test_list_objects() {
             None,
             None,
             None,
-            )
+        )
         .await;
     //assert_eq!(
     //    "TestListObject",
@@ -124,7 +124,7 @@ async fn test_exists_object() {
             &Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd555").unwrap(),
             None,
             None,
-            )
+        )
         .await;
     //assert_eq!(204, res.unwrap().status());
 
@@ -136,7 +136,7 @@ async fn test_exists_object() {
             &Uuid::from_str("ee22d1b8-3b95-4e94-96d5-9a2b60fbd556").unwrap(),
             None,
             None,
-            )
+        )
         .await;
     //assert_eq!(404, res.unwrap().status());
 
@@ -249,7 +249,7 @@ async fn test_update_object() {
             &object.class,
             &uuid.clone(),
             Some(ConsistencyLevel::ALL),
-            )
+        )
         .await;
     //assert_eq!(204, res.unwrap().status());
 
@@ -261,7 +261,7 @@ async fn test_update_object() {
             "test",
             &uuid.clone(),
             Some(ConsistencyLevel::ALL),
-            )
+        )
         .await;
     //assert_eq!(404, res.unwrap().status());
 

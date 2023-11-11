@@ -38,18 +38,16 @@ impl Oidc {
                 let parsed: OidcResponse = resp.json::<OidcResponse>().await?;
                 Ok(parsed)
             }
-            _ => {
-                Err(Box::new(NotConfiguredError(
-                    "OIDC is not configured or is unavailable".into(),
-                )))
-            }
+            _ => Err(Box::new(NotConfiguredError(
+                "OIDC is not configured or is unavailable".into(),
+            ))),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{WeaviateClient, collections::oidc::OidcResponse};
+    use crate::{collections::oidc::OidcResponse, WeaviateClient};
 
     fn test_oidc_response() -> OidcResponse {
         let response: OidcResponse = serde_json::from_value(
@@ -73,9 +71,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("GET", endpoint)
+        server
+            .mock("GET", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)

@@ -1,22 +1,25 @@
 use weaviate_community::{
-    WeaviateClient,
+    collections::auth::AuthApiKey,
     collections::{
-        backups::{
-            BackupBackends, 
-            BackupCreateRequest, 
-            BackupRestoreRequest
-        }, 
-        objects::Object
+        backups::{BackupBackends, BackupCreateRequest, BackupRestoreRequest},
+        objects::Object,
     },
-    collections::auth::AuthApiKey
+    WeaviateClient,
 };
 
 fn test_backup_create_req() -> BackupCreateRequest {
-    BackupCreateRequest { id: "this-is-a-test1".into(), include: None, exclude: None }
+    BackupCreateRequest {
+        id: "this-is-a-test1".into(),
+        include: None,
+        exclude: None,
+    }
 }
 
 fn test_backup_restore_req() -> BackupRestoreRequest {
-    BackupRestoreRequest { include: None, exclude: None }
+    BackupRestoreRequest {
+        include: None,
+        exclude: None,
+    }
 }
 
 fn test_object(class_name: &str) -> Object {

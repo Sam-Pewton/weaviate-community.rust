@@ -30,7 +30,7 @@ impl Schema {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let response = client.schema.get_class("Library").await;
     ///     assert!(response.is_err());
     ///     Ok(())
@@ -60,15 +60,17 @@ impl Schema {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let schema = client.schema.get().await?;
     ///     println!("{:#?}", &schema);
     ///     Ok(())
     /// }
     /// ```
     pub async fn get(&self) -> Result<Classes, Box<dyn Error>> {
-        let res = self.client.get(self.endpoint.clone()).send().await?;
+        //let res = self.client.get(self.endpoint.clone()).send().await?;
 
+        //println!("{:#?}", res.json::<serde_json::Value>().await);
+        let res = self.client.get(self.endpoint.clone()).send().await?;
         match res.status() {
             reqwest::StatusCode::OK => {
                 let res: Classes = res.json().await?;
@@ -96,23 +98,9 @@ impl Schema {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let class = Class {
-    ///         class: "Library".into(),
-    ///         description: "Library Class".into(),
-    ///         properties: None,
-    ///         vector_index_type: None,
-    ///         vector_index_config: None,
-    ///         vectorizer: None,
-    ///         module_config: None,
-    ///         inverted_index_config: None,
-    ///         sharding_config: None,
-    ///         multi_tenancy_config: None,
-    ///         replication_config: None,
-    ///     };
-    ///
-    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
-    ///     let class = client.schema.create_class(&class).await?;
-    ///     println!("{:#?}", &class);
+    ///     let class = Class::builder("Library").build();
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
+    ///     let res = client.schema.create_class(&class).await?;
     ///
     ///     Ok(())
     /// }
@@ -145,9 +133,11 @@ impl Schema {
     /// use weaviate_community::WeaviateClient;
     ///
     /// #[tokio::main]
-    /// async fn main() {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None).unwrap();
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let response = client.schema.delete("Library").await;
+    ///
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -356,7 +346,7 @@ impl Schema {
                 let tenants = res.json::<Vec<Tenant>>().await?;
                 let tenants = Tenants { tenants };
                 Ok(tenants)
-            },
+            }
             _ => Err(Box::new(SchemaError(format!(
                 "status code {} received when calling update_tenants endpoint.",
                 res.status()
@@ -371,16 +361,18 @@ mod tests {
     // implemented anything to mock the database. In future, actual tests will run as integration
     // tests in a container as part of the CICD process.
     use crate::collections::schema::{
-        ActivityStatus, Class, ClassBuilder, Property, ShardStatus, Tenant,
-        Tenants, Shard, Classes, Shards,
+        ActivityStatus, Class, ClassBuilder, Classes, Property, Shard, ShardStatus, Shards, Tenant,
+        Tenants,
     };
     use crate::WeaviateClient;
 
     /// Helper function for generating a testing class
     fn test_class(class_name: &str) -> Class {
-        ClassBuilder::new(class_name, "Test").build()
+        ClassBuilder::new(class_name)
+            .with_description("Test")
+            .build()
     }
-    
+
     fn test_classes() -> Classes {
         let class_a = test_class("Test1");
         let class_b = test_class("Test1");
@@ -393,17 +385,19 @@ mod tests {
 
     /// Helper function for generating a testing property
     fn test_property(property_name: &str) -> Property {
-        Property::builder(property_name, vec!["boolean"]).with_description("test property").build()
+        Property::builder(property_name, vec!["boolean"])
+            .with_description("test property")
+            .build()
     }
 
     /// Helper function for generating some test tenants, as shown on the weaviate API webpage.
     fn test_tenants() -> Tenants {
-        Tenants::new(
-            vec![
-                Tenant::builder("TENANT_A").build(),
-                Tenant::builder("TENANT_B").with_activity_status(ActivityStatus::COLD).build()
-            ],
-        )
+        Tenants::new(vec![
+            Tenant::builder("TENANT_A").build(),
+            Tenant::builder("TENANT_B")
+                .with_activity_status(ActivityStatus::COLD)
+                .build(),
+        ])
     }
 
     fn test_shards() -> Shards {
@@ -422,9 +416,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("POST", endpoint)
+        server
+            .mock("POST", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
@@ -435,9 +430,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("PUT", endpoint)
+        server
+            .mock("PUT", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
@@ -448,9 +444,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("GET", endpoint)
+        server
+            .mock("GET", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
@@ -462,7 +459,8 @@ mod tests {
         endpoint: &str,
         status_code: usize,
     ) -> mockito::Mock {
-        server.mock("DELETE", endpoint)
+        server
+            .mock("DELETE", endpoint)
             .with_status(status_code)
             .create()
     }
@@ -571,7 +569,7 @@ mod tests {
         mock.assert();
         assert!(res.is_err());
     }
-    
+
     #[tokio::test]
     async fn test_add_property_ok() {
         let property = test_property("Test");
@@ -581,12 +579,12 @@ mod tests {
             &mut mock_server,
             "/v1/schema/TestClass/properties",
             200,
-            &property_str
+            &property_str,
         );
         let res = client.schema.add_property("TestClass", &property).await;
         mock.assert();
         assert!(res.is_ok());
-        assert_eq!(property.name, res.unwrap().name); 
+        assert_eq!(property.name, res.unwrap().name);
     }
 
     #[tokio::test]
@@ -625,8 +623,16 @@ mod tests {
         let shard = test_shard();
         let shard_str = serde_json::to_string(&shard).unwrap();
         let (mut mock_server, client) = get_test_harness();
-        let mock = mock_put(&mut mock_server, "/v1/schema/Test/shards/abcd", 200, &shard_str);
-        let res = client.schema.update_class_shard("Test", "abcd", ShardStatus::READONLY).await;
+        let mock = mock_put(
+            &mut mock_server,
+            "/v1/schema/Test/shards/abcd",
+            200,
+            &shard_str,
+        );
+        let res = client
+            .schema
+            .update_class_shard("Test", "abcd", ShardStatus::READONLY)
+            .await;
         mock.assert();
         assert!(res.is_ok());
         assert_eq!(shard.name, res.unwrap().name);
@@ -636,7 +642,10 @@ mod tests {
     async fn test_update_class_shard_err() {
         let (mut mock_server, client) = get_test_harness();
         let mock = mock_put(&mut mock_server, "/v1/schema/Test/shards/abcd", 401, "");
-        let res = client.schema.update_class_shard("Test", "abcd", ShardStatus::READONLY).await;
+        let res = client
+            .schema
+            .update_class_shard("Test", "abcd", ShardStatus::READONLY)
+            .await;
         mock.assert();
         assert!(res.is_err());
     }
@@ -646,7 +655,12 @@ mod tests {
         let tenants = test_tenants();
         let tenants_str = serde_json::to_string(&tenants.tenants).unwrap();
         let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/schema/Test/tenants", 200, &tenants_str);
+        let mock = mock_get(
+            &mut mock_server,
+            "/v1/schema/Test/tenants",
+            200,
+            &tenants_str,
+        );
         let res = client.schema.list_tenants("Test").await;
         mock.assert();
         assert!(res.is_ok());
@@ -667,7 +681,12 @@ mod tests {
         let tenants = test_tenants();
         let tenants_str = serde_json::to_string(&tenants.tenants).unwrap();
         let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/schema/Test/tenants", 200, &tenants_str);
+        let mock = mock_post(
+            &mut mock_server,
+            "/v1/schema/Test/tenants",
+            200,
+            &tenants_str,
+        );
         let res = client.schema.add_tenants("Test", &tenants).await;
         mock.assert();
         assert!(res.is_ok());
@@ -688,7 +707,10 @@ mod tests {
     async fn test_remove_tenants_ok() {
         let (mut mock_server, client) = get_test_harness();
         let mock = mock_delete(&mut mock_server, "/v1/schema/Test/tenants", 200);
-        let res = client.schema.remove_tenants("Test", &vec!["TestTenant"]).await;
+        let res = client
+            .schema
+            .remove_tenants("Test", &vec!["TestTenant"])
+            .await;
         mock.assert();
         assert!(res.is_ok());
         assert!(res.unwrap());
@@ -698,7 +720,10 @@ mod tests {
     async fn test_remove_tenants_err() {
         let (mut mock_server, client) = get_test_harness();
         let mock = mock_delete(&mut mock_server, "/v1/schema/Test/tenants", 422);
-        let res = client.schema.remove_tenants("Test", &vec!["TestTenant"]).await;
+        let res = client
+            .schema
+            .remove_tenants("Test", &vec!["TestTenant"])
+            .await;
         mock.assert();
         assert!(res.is_err());
     }
@@ -708,7 +733,12 @@ mod tests {
         let tenants = test_tenants();
         let tenants_str = serde_json::to_string(&tenants.tenants).unwrap();
         let (mut mock_server, client) = get_test_harness();
-        let mock = mock_put(&mut mock_server, "/v1/schema/Test/tenants", 200, &tenants_str);
+        let mock = mock_put(
+            &mut mock_server,
+            "/v1/schema/Test/tenants",
+            200,
+            &tenants_str,
+        );
         let res = client.schema.update_tenants("Test", &tenants).await;
         mock.assert();
         assert!(res.is_ok());

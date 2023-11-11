@@ -1,8 +1,8 @@
+use crate::collections::error::NodesError;
+use crate::collections::nodes::MultiNodes;
 use reqwest::Url;
 use std::error::Error;
 use std::sync::Arc;
-use crate::collections::nodes::MultiNodes;
-use crate::collections::error::NodesError;
 
 /// All nodes related endpoints and functionality described in
 /// [Weaviate nodes API documentation](https://weaviate.io/developers/weaviate/api/rest/nodes)
@@ -42,23 +42,17 @@ impl Nodes {
                 let res: MultiNodes = res.json().await?;
                 Ok(res)
             }
-            _ => Err(
-                Box::new(
-                    NodesError(
-                        format!(
-                            "status code {} received when calling get_nodes_status endpoint.",
-                            res.status()
-                        )
-                    )
-                )
-            ),
+            _ => Err(Box::new(NodesError(format!(
+                "status code {} received when calling get_nodes_status endpoint.",
+                res.status()
+            )))),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{WeaviateClient, collections::nodes::MultiNodes};
+    use crate::{collections::nodes::MultiNodes, WeaviateClient};
 
     fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
         let mock_server = mockito::Server::new();
@@ -70,97 +64,98 @@ mod tests {
 
     fn test_nodes() -> MultiNodes {
         let nodes: MultiNodes = serde_json::from_value(serde_json::json!(
-            {
-                "nodes": [
+        {
+            "nodes": [
+              {
+                "batchStats": {
+                  "ratePerSecond": 0
+                },
+                "gitHash": "e6b37ce",
+                "name": "weaviate-0",
+                "shards": [
                   {
-                    "batchStats": {
-                      "ratePerSecond": 0
-                    },
-                    "gitHash": "e6b37ce",
-                    "name": "weaviate-0",
-                    "shards": [
-                      {
-                        "class": "TestArticle",
-                        "name": "nq1Bg9Q5lxxP",
-                        "objectCount": 0,
-                        "vectorIndexingStatus": "READY",
-                        "vectorQueueLength": 0
-                      },
-                      {
-                        "class": "TestAuthor",
-                        "name": "MINLtCghkdG8",
-                        "objectCount": 0,
-                        "vectorIndexingStatus": "READY",
-                        "vectorQueueLength": 0
-                      }
-                    ],
-                    "stats": {
-                      "objectCount": 0,
-                      "shardCount": 2
-                    },
-                    "status": "HEALTHY",
-                    "version": "1.22.1"
+                    "class": "TestArticle",
+                    "name": "nq1Bg9Q5lxxP",
+                    "objectCount": 0,
+                    "vectorIndexingStatus": "READY",
+                    "vectorQueueLength": 0
                   },
                   {
-                    "batchStats": {
-                      "ratePerSecond": 0
-                    },
-                    "gitHash": "e6b37ce",
-                    "name": "weaviate-1",
-                    "shards": [
-                      {
-                        "class": "TestArticle",
-                        "name": "HuPocHE5w2LP",
-                        "objectCount": 1,
-                        "vectorIndexingStatus": "READY",
-                        "vectorQueueLength": 0
-                      },
-                      {
-                        "class": "TestAuthor",
-                        "name": "PeQjZRmK0xNB",
-                        "objectCount": 0,
-                        "vectorIndexingStatus": "READY",
-                        "vectorQueueLength": 0
-                      }
-                    ],
-                    "stats": {
-                      "objectCount": 1,
-                      "shardCount": 2
-                    },
-                    "status": "HEALTHY",
-                    "version": "1.22.1"
-                  },
-                  {
-                    "batchStats": {
-                      "ratePerSecond": 0
-                    },
-                    "gitHash": "e6b37ce",
-                    "name": "weaviate-2",
-                    "shards": [
-                      {
-                        "class": "TestArticle",
-                        "name": "JTg39c7ZlFUX",
-                        "objectCount": 0,
-                        "vectorIndexingStatus": "READY",
-                        "vectorQueueLength": 0
-                      },
-                      {
-                        "class": "TestAuthor",
-                        "name": "W5ulmuJGDTxj",
-                        "objectCount": 1,
-                        "vectorIndexingStatus": "READY",
-                        "vectorQueueLength": 0
-                      }
-                    ],
-                    "stats": {
-                      "objectCount": 1,
-                      "shardCount": 2
-                    },
-                    "status": "HEALTHY",
-                    "version": "1.22.1"
+                    "class": "TestAuthor",
+                    "name": "MINLtCghkdG8",
+                    "objectCount": 0,
+                    "vectorIndexingStatus": "READY",
+                    "vectorQueueLength": 0
                   }
-                ]
-              })).unwrap();
+                ],
+                "stats": {
+                  "objectCount": 0,
+                  "shardCount": 2
+                },
+                "status": "HEALTHY",
+                "version": "1.22.1"
+              },
+              {
+                "batchStats": {
+                  "ratePerSecond": 0
+                },
+                "gitHash": "e6b37ce",
+                "name": "weaviate-1",
+                "shards": [
+                  {
+                    "class": "TestArticle",
+                    "name": "HuPocHE5w2LP",
+                    "objectCount": 1,
+                    "vectorIndexingStatus": "READY",
+                    "vectorQueueLength": 0
+                  },
+                  {
+                    "class": "TestAuthor",
+                    "name": "PeQjZRmK0xNB",
+                    "objectCount": 0,
+                    "vectorIndexingStatus": "READY",
+                    "vectorQueueLength": 0
+                  }
+                ],
+                "stats": {
+                  "objectCount": 1,
+                  "shardCount": 2
+                },
+                "status": "HEALTHY",
+                "version": "1.22.1"
+              },
+              {
+                "batchStats": {
+                  "ratePerSecond": 0
+                },
+                "gitHash": "e6b37ce",
+                "name": "weaviate-2",
+                "shards": [
+                  {
+                    "class": "TestArticle",
+                    "name": "JTg39c7ZlFUX",
+                    "objectCount": 0,
+                    "vectorIndexingStatus": "READY",
+                    "vectorQueueLength": 0
+                  },
+                  {
+                    "class": "TestAuthor",
+                    "name": "W5ulmuJGDTxj",
+                    "objectCount": 1,
+                    "vectorIndexingStatus": "READY",
+                    "vectorQueueLength": 0
+                  }
+                ],
+                "stats": {
+                  "objectCount": 1,
+                  "shardCount": 2
+                },
+                "status": "HEALTHY",
+                "version": "1.22.1"
+              }
+            ]
+          }))
+        .unwrap();
         nodes
     }
 
@@ -168,9 +163,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("GET", endpoint)
+        server
+            .mock("GET", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)

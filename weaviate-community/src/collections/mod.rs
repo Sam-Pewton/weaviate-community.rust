@@ -1,11 +1,11 @@
 pub mod auth;
 pub mod backups;
 pub mod batch;
+pub mod classification;
 pub mod error;
 pub mod meta;
+pub mod nodes;
 pub mod objects;
 pub mod oidc;
-pub mod schema;
 pub mod query;
-pub mod nodes;
-pub mod classification;
+pub mod schema;

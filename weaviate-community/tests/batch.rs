@@ -1,12 +1,12 @@
+use uuid::Uuid;
 use weaviate_community::{
+    collections::auth::AuthApiKey,
     collections::{
         batch::{BatchDeleteRequest, MatchConfig},
         objects::{Object, Objects},
     },
     WeaviateClient,
-    collections::auth::AuthApiKey,
 };
-use uuid::Uuid;
 
 fn test_objects(class_name: &str, uuid_one: &Uuid, uuid_two: &Uuid) -> Objects {
     let properties = serde_json::json!({

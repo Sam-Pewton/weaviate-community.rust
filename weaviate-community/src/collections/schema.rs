@@ -21,15 +21,13 @@ impl Classes {
     ///
     /// let classes = Classes::new(
     ///     vec![
-    ///         Class::builder("Article", "Class for storing article data").build(),
-    ///         Class::builder("Journal", "Class for storing journal data").build()
+    ///         Class::builder("Article").build(),
+    ///         Class::builder("Journal").build()
     ///     ]
     /// );
     /// ```
     pub fn new(classes: Vec<Class>) -> Classes {
-        Classes {
-            classes
-        }
+        Classes { classes }
     }
 }
 
@@ -38,7 +36,9 @@ impl Classes {
 #[serde(rename_all = "camelCase")]
 pub struct Class {
     pub class: String,
-    pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub properties: Option<Properties>,
@@ -53,7 +53,7 @@ pub struct Class {
     pub vectorizer: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub module_config: Option<String>,
+    pub module_config: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub inverted_index_config: Option<InvertedIndexConfig>,
@@ -80,10 +80,10 @@ impl Class {
     /// ```rust
     /// use weaviate_community::collections::schema::Class;
     ///
-    /// let builder = Class::builder("Article", "Class for storing article data");
+    /// let builder = Class::builder("Article");
     /// ```
-    pub fn builder(class_name: &str, description: &str) -> ClassBuilder {
-        ClassBuilder::new(class_name, description)
+    pub fn builder(class_name: &str) -> ClassBuilder {
+        ClassBuilder::new(class_name)
     }
 }
 
@@ -91,12 +91,12 @@ impl Class {
 #[derive(Default)]
 pub struct ClassBuilder {
     pub class: String,
-    pub description: String,
+    pub description: Option<String>,
     pub properties: Option<Properties>,
     pub vector_index_type: Option<VectorIndexType>,
     pub vector_index_config: Option<VectorIndexConfig>,
     pub vectorizer: Option<String>,
-    pub module_config: Option<String>,
+    pub module_config: Option<serde_json::Value>,
     pub inverted_index_config: Option<InvertedIndexConfig>,
     pub sharding_config: Option<ShardingConfig>,
     pub multi_tenancy_config: Option<MultiTenancyConfig>,
@@ -110,18 +110,17 @@ impl ClassBuilder {
     ///
     /// # Parameters
     /// - class_name: the name of the class
-    /// - description: the description of the class
     ///
     /// # Example
     /// ```rust
     /// use weaviate_community::collections::schema::ClassBuilder;
     ///
-    /// let builder = ClassBuilder::new("Article", "Class for storing article data");
+    /// let builder = ClassBuilder::new("Article");
     /// ```
-    pub fn new(class: &str, description: &str) -> ClassBuilder {
+    pub fn new(class: &str) -> ClassBuilder {
         ClassBuilder {
             class: class.into(),
-            description: description.into(),
+            description: None,
             properties: None,
             vector_index_type: None,
             vector_index_config: None,
@@ -132,6 +131,23 @@ impl ClassBuilder {
             multi_tenancy_config: None,
             replication_config: None,
         }
+    }
+
+    /// Add a value to the optional `description` value of the class.
+    ///
+    /// # Parameters
+    /// - description: the description to set
+    ///
+    /// # Example
+    /// ```rust
+    /// use weaviate_community::collections::schema::ClassBuilder;
+    ///
+    /// let builder = ClassBuilder::new("Article")
+    ///     .with_description("A news article");
+    /// ```
+    pub fn with_description(mut self, description: &str) -> ClassBuilder {
+        self.description = Some(description.into());
+        self
     }
 
     /// Add a value to the optional `properties` value of the class.
@@ -148,7 +164,7 @@ impl ClassBuilder {
     /// };
     ///
     /// let properties = Properties::new(vec![Property::builder("title", vec!["text"]).build()]);
-    /// let builder = ClassBuilder::new("Article", "Class for storing article data")
+    /// let builder = ClassBuilder::new("Article")
     ///     .with_properties(properties);
     /// ```
     pub fn with_properties(mut self, properties: Properties) -> ClassBuilder {
@@ -170,7 +186,7 @@ impl ClassBuilder {
     ///     VectorIndexType
     /// };
     ///
-    /// let builder = ClassBuilder::new("Article", "Class for storing article data")
+    /// let builder = ClassBuilder::new("Article")
     ///     .with_vector_index_type(VectorIndexType::HNSW);
     /// ```
     pub fn with_vector_index_type(mut self, vector_index_type: VectorIndexType) -> ClassBuilder {
@@ -191,12 +207,12 @@ impl ClassBuilder {
     /// };
     ///
     /// let config = VectorIndexConfig::builder().build();
-    /// let builder = ClassBuilder::new("Article", "Class for storing article data")
+    /// let builder = ClassBuilder::new("Article")
     ///     .with_vector_index_config(config);
     /// ```
     pub fn with_vector_index_config(
         mut self,
-        vector_index_config: VectorIndexConfig
+        vector_index_config: VectorIndexConfig,
     ) -> ClassBuilder {
         self.vector_index_config = Some(vector_index_config);
         self
@@ -213,7 +229,7 @@ impl ClassBuilder {
     /// ```rust
     /// use weaviate_community::collections::schema::ClassBuilder;
     ///
-    /// let builder = ClassBuilder::new("Article", "Class for storing article data")
+    /// let builder = ClassBuilder::new("Article")
     ///     .with_vectorizer("none");
     /// ```
     pub fn with_vectorizer(mut self, vectorizer: &str) -> ClassBuilder {
@@ -232,7 +248,7 @@ impl ClassBuilder {
     /// ```rust
     /// use weaviate_community::collections::schema::ClassBuilder;
     ///
-    /// let builder = ClassBuilder::new("Article", "Class for storing article data")
+    /// let builder = ClassBuilder::new("Article")
     ///     .with_module_config("");
     /// ```
     pub fn with_module_config(mut self, module_config: &str) -> ClassBuilder {
@@ -250,7 +266,7 @@ impl ClassBuilder {
     /// use weaviate_community::collections::schema::{ClassBuilder, InvertedIndexConfig};
     ///
     /// let config = InvertedIndexConfig::builder().build();
-    /// let builder = ClassBuilder::new("Article", "Class for storing article data")
+    /// let builder = ClassBuilder::new("Article")
     ///     .with_inverted_index_config(config);
     /// ```
     pub fn with_inverted_index_config(
@@ -271,7 +287,7 @@ impl ClassBuilder {
     /// use weaviate_community::collections::schema::{ClassBuilder, ShardingConfig};
     ///
     /// let config = ShardingConfig::builder().build();
-    /// let builder = ClassBuilder::new("Article", "Class for storing article data")
+    /// let builder = ClassBuilder::new("Article")
     ///     .with_sharding_config(config);
     /// ```
     pub fn with_sharding_config(mut self, sharding_config: ShardingConfig) -> ClassBuilder {
@@ -289,7 +305,7 @@ impl ClassBuilder {
     /// use weaviate_community::collections::schema::{ClassBuilder, MultiTenancyConfig};
     ///
     /// let config = MultiTenancyConfig::new(true);
-    /// let builder = ClassBuilder::new("Article", "Class for storing article data")
+    /// let builder = ClassBuilder::new("Article")
     ///     .with_multi_tenancy_config(config);
     /// ```
     pub fn with_multi_tenancy_config(
@@ -310,12 +326,12 @@ impl ClassBuilder {
     /// use weaviate_community::collections::schema::{ClassBuilder, ReplicationConfig};
     ///
     /// let config = ReplicationConfig::new(3);
-    /// let builder = ClassBuilder::new("Article", "Class for storing article data")
+    /// let builder = ClassBuilder::new("Article")
     ///     .with_replication_config(config);
     /// ```
     pub fn with_replication_config(
         mut self,
-        replication_config: ReplicationConfig
+        replication_config: ReplicationConfig,
     ) -> ClassBuilder {
         self.replication_config = Some(replication_config);
         self
@@ -328,14 +344,14 @@ impl ClassBuilder {
     /// ```rust
     /// use weaviate_community::collections::schema::ClassBuilder;
     ///
-    /// let class = ClassBuilder::new("Article", "Class for storing article data").build();
+    /// let class = ClassBuilder::new("Article").build();
     /// ```
     ///
     /// Using Class
     /// ```rust
     /// use weaviate_community::collections::schema::Class;
     ///
-    /// let class = Class::builder("Article", "Class for storing article data").build();
+    /// let class = Class::builder("Article").build();
     /// ```
     pub fn build(self) -> Class {
         Class {
@@ -854,7 +870,7 @@ impl VectorIndexConfigBuilder {
     /// ```
     pub fn with_vector_cache_max_objects(
         mut self,
-        vector_cache_max_objects: u64
+        vector_cache_max_objects: u64,
     ) -> VectorIndexConfigBuilder {
         self.vector_cache_max_objects = Some(vector_cache_max_objects);
         self
@@ -873,7 +889,7 @@ impl VectorIndexConfigBuilder {
     /// ```
     pub fn with_flat_search_cut_off(
         mut self,
-        flat_search_cut_off: u64
+        flat_search_cut_off: u64,
     ) -> VectorIndexConfigBuilder {
         self.flat_search_cut_off = Some(flat_search_cut_off);
         self
@@ -892,7 +908,7 @@ impl VectorIndexConfigBuilder {
     /// ```
     pub fn with_cleanup_interval_seconds(
         mut self,
-        cleanup_interval_seconds: u64
+        cleanup_interval_seconds: u64,
     ) -> VectorIndexConfigBuilder {
         self.cleanup_interval_seconds = Some(cleanup_interval_seconds);
         self
@@ -1412,10 +1428,7 @@ impl ShardingConfigBuilder {
     /// let builder = ShardingConfigBuilder::new()
     ///     .with_virtual_per_physical(10);
     /// ```
-    pub fn with_virtual_per_physical(
-        mut self, 
-        virtual_per_physical: u64
-    ) -> ShardingConfigBuilder {
+    pub fn with_virtual_per_physical(mut self, virtual_per_physical: u64) -> ShardingConfigBuilder {
         self.virtual_per_physical = Some(virtual_per_physical);
         self
     }
@@ -1432,10 +1445,7 @@ impl ShardingConfigBuilder {
     /// let builder = ShardingConfigBuilder::new()
     ///     .with_desired_count(10);
     /// ```
-    pub fn with_desired_count(
-        mut self, 
-        desired_count: u64
-    ) -> ShardingConfigBuilder {
+    pub fn with_desired_count(mut self, desired_count: u64) -> ShardingConfigBuilder {
         self.desired_count = Some(desired_count);
         self
     }
@@ -1452,10 +1462,7 @@ impl ShardingConfigBuilder {
     /// let builder = ShardingConfigBuilder::new()
     ///     .with_actual_count(10);
     /// ```
-    pub fn with_actual_count(
-        mut self, 
-        actual_count: u64
-    ) -> ShardingConfigBuilder {
+    pub fn with_actual_count(mut self, actual_count: u64) -> ShardingConfigBuilder {
         self.actual_count = Some(actual_count);
         self
     }
@@ -1473,8 +1480,8 @@ impl ShardingConfigBuilder {
     ///     .with_desired_virtual_count(10);
     /// ```
     pub fn with_desired_virtual_count(
-        mut self, 
-        desired_virtual_count: u64
+        mut self,
+        desired_virtual_count: u64,
     ) -> ShardingConfigBuilder {
         self.desired_virtual_count = Some(desired_virtual_count);
         self
@@ -1492,10 +1499,7 @@ impl ShardingConfigBuilder {
     /// let builder = ShardingConfigBuilder::new()
     ///     .with_actual_virtual_count(10);
     /// ```
-    pub fn with_actual_virtual_count(
-        mut self, 
-        actual_virtual_count: u64
-    ) -> ShardingConfigBuilder {
+    pub fn with_actual_virtual_count(mut self, actual_virtual_count: u64) -> ShardingConfigBuilder {
         self.actual_virtual_count = Some(actual_virtual_count);
         self
     }
@@ -1512,10 +1516,7 @@ impl ShardingConfigBuilder {
     /// let builder = ShardingConfigBuilder::new()
     ///     .with_key(ShardingKey::_ID);
     /// ```
-    pub fn with_key(
-        mut self, 
-        key: ShardingKey
-    ) -> ShardingConfigBuilder {
+    pub fn with_key(mut self, key: ShardingKey) -> ShardingConfigBuilder {
         self.key = Some(key);
         self
     }
@@ -1532,10 +1533,7 @@ impl ShardingConfigBuilder {
     /// let builder = ShardingConfigBuilder::new()
     ///     .with_strategy(ShardingStrategy::HASH);
     /// ```
-    pub fn with_strategy(
-        mut self, 
-        strategy: ShardingStrategy
-    ) -> ShardingConfigBuilder {
+    pub fn with_strategy(mut self, strategy: ShardingStrategy) -> ShardingConfigBuilder {
         self.strategy = Some(strategy);
         self
     }
@@ -1552,10 +1550,7 @@ impl ShardingConfigBuilder {
     /// let builder = ShardingConfigBuilder::new()
     ///     .with_function(ShardingFunction::MURMUR3);
     /// ```
-    pub fn with_function(
-        mut self, 
-        function: ShardingFunction
-    ) -> ShardingConfigBuilder {
+    pub fn with_function(mut self, function: ShardingFunction) -> ShardingConfigBuilder {
         self.function = Some(function);
         self
     }
@@ -1734,10 +1729,7 @@ impl InvertedIndexConfigBuilder {
     /// let stopwords = StopwordsConfig::builder().build();
     /// let builder = InvertedIndexConfigBuilder::new().with_stopwords(stopwords);
     /// ```
-    pub fn with_stopwords(
-        mut self, 
-        stopwords: StopwordsConfig
-    ) -> InvertedIndexConfigBuilder {
+    pub fn with_stopwords(mut self, stopwords: StopwordsConfig) -> InvertedIndexConfigBuilder {
         self.stopwords = Some(stopwords);
         self
     }
@@ -1787,7 +1779,7 @@ impl InvertedIndexConfigBuilder {
     /// ```
     pub fn with_index_property_length(
         mut self,
-        index_property_length: bool
+        index_property_length: bool,
     ) -> InvertedIndexConfigBuilder {
         self.index_property_length = Some(index_property_length);
         self
@@ -1823,7 +1815,7 @@ impl InvertedIndexConfigBuilder {
     /// ```
     pub fn with_cleanup_interval_seconds(
         mut self,
-        cleanup_interval_seconds: u64
+        cleanup_interval_seconds: u64,
     ) -> InvertedIndexConfigBuilder {
         self.cleanup_interval_seconds = Some(cleanup_interval_seconds);
         self
@@ -1926,10 +1918,7 @@ impl StopwordsConfigBuilder {
     ///
     /// let builder = StopwordsConfigBuilder::new().with_preset(StopwordPreset::EN);
     /// ```
-    pub fn with_preset(
-        mut self,
-        preset: StopwordPreset
-    ) -> StopwordsConfigBuilder {
+    pub fn with_preset(mut self, preset: StopwordPreset) -> StopwordsConfigBuilder {
         self.preset = Some(preset);
         self
     }
@@ -1945,10 +1934,7 @@ impl StopwordsConfigBuilder {
     ///
     /// let builder = StopwordsConfigBuilder::new().with_additions(vec!["word"]);
     /// ```
-    pub fn with_additions(
-        mut self,
-        additions: Vec<&str>
-    ) -> StopwordsConfigBuilder {
+    pub fn with_additions(mut self, additions: Vec<&str>) -> StopwordsConfigBuilder {
         let additions = additions.iter().map(|field| field.to_string()).collect();
         self.additions = Some(additions);
         self
@@ -1965,10 +1951,7 @@ impl StopwordsConfigBuilder {
     ///
     /// let builder = StopwordsConfigBuilder::new().with_removals(vec!["word"]);
     /// ```
-    pub fn with_removals(
-        mut self,
-        removals: Vec<&str>
-    ) -> StopwordsConfigBuilder {
+    pub fn with_removals(mut self, removals: Vec<&str>) -> StopwordsConfigBuilder {
         let removals = removals.iter().map(|field| field.to_string()).collect();
         self.removals = Some(removals);
         self
@@ -2135,10 +2118,7 @@ impl TenantBuilder {
     ///
     /// let builder = TenantBuilder::new("abcde").with_activity_status(ActivityStatus::HOT);
     /// ```
-    pub fn with_activity_status(
-        mut self,
-        activity_status: ActivityStatus
-    ) -> TenantBuilder {
+    pub fn with_activity_status(mut self, activity_status: ActivityStatus) -> TenantBuilder {
         self.activity_status = Some(activity_status);
         self
     }
@@ -2220,7 +2200,6 @@ pub enum Tokenization {
     FIELD,
 }
 
-
 /// Shards struct to hold multiple shards
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Shards {
@@ -2273,7 +2252,10 @@ impl Shard {
     /// let shard = Shard::new("abcd", ShardStatus::READY);
     /// ```
     pub fn new(name: &str, status: ShardStatus) -> Shard {
-        Shard { name: name.into(), status}
+        Shard {
+            name: name.into(),
+            status,
+        }
     }
 }
 

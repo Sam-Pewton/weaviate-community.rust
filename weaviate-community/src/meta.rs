@@ -38,9 +38,9 @@ impl Meta {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = WeaviateClient::new("http://localhost:8080", None)?;
+    ///     let client = WeaviateClient::builder("http://localhost:8080").build()?;
     ///     let res = client.meta.get_meta().await?;
-    ///     println!("{:#?}", res);
+    ///
     ///     Ok(())
     /// }
     /// ```
@@ -53,7 +53,7 @@ impl Meta {
 
 #[cfg(test)]
 mod tests {
-    use crate::{WeaviateClient, collections::meta::Metadata};
+    use crate::{collections::meta::Metadata, WeaviateClient};
 
     fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
         let mock_server = mockito::Server::new();
@@ -73,7 +73,8 @@ mod tests {
                 }
             },
             "version": "1.0.0"
-        })).unwrap();
+        }))
+        .unwrap();
         data
     }
 
@@ -81,9 +82,10 @@ mod tests {
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
-        body: &str
+        body: &str,
     ) -> mockito::Mock {
-        server.mock("GET", endpoint)
+        server
+            .mock("GET", endpoint)
             .with_status(status_code)
             .with_header("content-type", "application/json")
             .with_body(body)
@@ -100,7 +102,6 @@ mod tests {
         mock.assert();
         assert!(res.is_ok());
         assert_eq!(res.unwrap().hostname, metadata.hostname);
-        println!("{:#?}", metadata);
     }
 
     #[tokio::test]

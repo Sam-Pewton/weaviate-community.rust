@@ -44,7 +44,9 @@ impl RawQuery {
     /// let query = RawQuery::new(my_query_str);
     /// ```
     pub fn new(query: &str) -> Self {
-        RawQuery { query: query.into() }
+        RawQuery {
+            query: query.into(),
+        }
     }
 }
 
@@ -329,7 +331,7 @@ impl AggregateBuilder {
         self.limit = Some(limit);
         self
     }
-    
+
     /// Build the `AggregateQuery` to use within within a GraphQL Aggregate request.
     ///
     /// # Example
@@ -411,13 +413,12 @@ impl AggregateBuilder {
 
     /// Check if the query contains a filter.
     fn contains_filter(&self) -> bool {
-        match
-            self.where_clause.is_some() ||
-            self.group_by.is_some() ||
-            self.near.is_some() ||
-            self.object_limit.is_some() ||
-            self.tenant.is_some() ||
-            self.limit.is_some()
+        match self.where_clause.is_some()
+            || self.group_by.is_some()
+            || self.near.is_some()
+            || self.object_limit.is_some()
+            || self.tenant.is_some()
+            || self.limit.is_some()
         {
             true => true,
             false => false,
@@ -996,7 +997,7 @@ impl GetBuilder {
         self.ask = Some(ask.into());
         self
     }
-    
+
     /// Build the `GetQuery` to use within within a GraphQL Get request.
     ///
     /// # Example
@@ -1034,7 +1035,6 @@ impl GetBuilder {
     /// }
     /// ```
     pub fn build(&self) -> GetQuery {
-
         // Path
         let mut query = String::from("{\n");
         query.push_str("  Get {\n");
@@ -1115,7 +1115,6 @@ impl GetBuilder {
             query.push_str("      _additional {\n");
             query.push_str(format!("        {}\n", additional.join(" ")).as_str());
             query.push_str("      }\n");
-
         }
         query.push_str("    }\n");
         query.push_str("  }\n");
@@ -1125,21 +1124,20 @@ impl GetBuilder {
 
     /// Check if the query contains a filter.
     fn contains_filter(&self) -> bool {
-        match
-            self.limit.is_some() || 
-            self.offset.is_some() || 
-            self.after.is_some() || 
-            self.autocut.is_some() || 
-            self.tenant.is_some() ||
-            self.where_clause.is_some() ||
-            self.near_text.is_some() ||
-            self.near_vector.is_some() ||
-            self.near_image.is_some() ||
-            self.near_object.is_some() ||
-            self.hybrid.is_some() ||
-            self.bm25.is_some() ||
-            self.sort.is_some() ||
-            self.ask.is_some()
+        match self.limit.is_some()
+            || self.offset.is_some()
+            || self.after.is_some()
+            || self.autocut.is_some()
+            || self.tenant.is_some()
+            || self.where_clause.is_some()
+            || self.near_text.is_some()
+            || self.near_vector.is_some()
+            || self.near_image.is_some()
+            || self.near_object.is_some()
+            || self.hybrid.is_some()
+            || self.bm25.is_some()
+            || self.sort.is_some()
+            || self.ask.is_some()
         {
             true => true,
             false => false,
@@ -1154,15 +1152,16 @@ mod tests {
     #[test]
     fn test_get_query_builder() {
         let query = GetBuilder::new(
-            "JeopardyQuestion", 
+            "JeopardyQuestion",
             vec![
                 "question".into(),
                 "answer".into(),
                 "points".into(),
-                "hasCategory { ... on JeopardyCategory { title }}".into()
-            ])
-            .with_limit(1)
-            .with_offset(1);
+                "hasCategory { ... on JeopardyCategory { title }}".into(),
+            ],
+        )
+        .with_limit(1)
+        .with_offset(1);
         //println!("{}", query.build());
     }
 }

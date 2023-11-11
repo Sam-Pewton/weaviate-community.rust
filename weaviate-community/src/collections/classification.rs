@@ -1,6 +1,7 @@
 /// All classification associated type components
 use serde::{Deserialize, Serialize};
 
+/// A new ClassificationRequest used to make classification requests
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ClassificationRequest {
@@ -32,6 +33,7 @@ impl ClassificationRequest {
     }
 }
 
+/// Builder for the ClassificationRequest
 #[derive(Debug, Default)]
 pub struct ClassificationRequestBuilder {
     pub classification_type: ClassificationType,
@@ -77,7 +79,7 @@ impl ClassificationRequestBuilder {
     /// ```
     pub fn with_type(
         mut self,
-        classification_type: ClassificationType
+        classification_type: ClassificationType,
     ) -> ClassificationRequestBuilder {
         self.classification_type = classification_type;
         self
@@ -95,10 +97,7 @@ impl ClassificationRequestBuilder {
     /// let builder = ClassificationRequestBuilder::new()
     ///     .with_class("Article");
     /// ```
-    pub fn with_class(
-        mut self,
-        class_name: &str,
-    ) -> ClassificationRequestBuilder {
+    pub fn with_class(mut self, class_name: &str) -> ClassificationRequestBuilder {
         self.class = class_name.into();
         self
     }
@@ -150,7 +149,7 @@ impl ClassificationRequestBuilder {
         self.based_on_properties = Some(based_on_properties);
         self
     }
-    
+
     /// Add a value to the `filters` property of the ClassificationRequest.
     ///
     /// # Parameters
@@ -165,10 +164,7 @@ impl ClassificationRequestBuilder {
     ///         {"path": ["wordCount"], "operator": "GreaterThan", "valueInt": 100}
     ///     ));
     /// ```
-    pub fn with_filters(
-        mut self,
-        filters: serde_json::Value,
-    ) -> ClassificationRequestBuilder {
+    pub fn with_filters(mut self, filters: serde_json::Value) -> ClassificationRequestBuilder {
         self.filters = filters;
         self
     }
@@ -185,10 +181,7 @@ impl ClassificationRequestBuilder {
     /// let builder = ClassificationRequestBuilder::new()
     ///     .with_settings(serde_json::json!({"k": 3}));
     /// ```
-    pub fn with_settings(
-        mut self,
-        settings: serde_json::Value,
-    ) -> ClassificationRequestBuilder {
+    pub fn with_settings(mut self, settings: serde_json::Value) -> ClassificationRequestBuilder {
         self.settings = Some(settings);
         self
     }
@@ -234,17 +227,18 @@ impl ClassificationRequestBuilder {
     ///     .build();
     /// ```
     pub fn build(self) -> ClassificationRequest {
-        ClassificationRequest { 
+        ClassificationRequest {
             classification_type: self.classification_type,
-            class: self.class, 
-            classify_properties: self.classify_properties, 
-            based_on_properties: self.based_on_properties, 
-            filters: self.filters, 
-            settings: self.settings
+            class: self.class,
+            classify_properties: self.classify_properties,
+            based_on_properties: self.based_on_properties,
+            filters: self.filters,
+            settings: self.settings,
         }
     }
 }
 
+/// Types of classification available
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub enum ClassificationType {
     #[default]
@@ -254,6 +248,7 @@ pub enum ClassificationType {
     ZEROSHOT,
 }
 
+/// Response received from the classification
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ClassificationResponse {
@@ -272,6 +267,7 @@ pub struct ClassificationResponse {
     pub filters: serde_json::Value,
 }
 
+/// Metadata for the Classification
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ClassificationMetadata {

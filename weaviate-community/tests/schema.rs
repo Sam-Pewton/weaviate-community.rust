@@ -1,17 +1,15 @@
-use weaviate_community::collections::schema::{
-    ActivityStatus, Class, ClassBuilder, MultiTenancyConfig, Property, Tenant,
-    Tenants, ShardStatus
-};
 use weaviate_community::collections::auth::AuthApiKey;
+use weaviate_community::collections::schema::{
+    ActivityStatus, Class, ClassBuilder, MultiTenancyConfig, Property, ShardStatus, Tenant, Tenants,
+};
 use weaviate_community::WeaviateClient;
-
 
 /// Helper function for generating a testing class
 fn test_class(class_name: &str, enabled: bool) -> Class {
     ClassBuilder::new(class_name, "Test")
         .multi_tenancy_config(MultiTenancyConfig { enabled })
         .build()
-    }
+}
 
 /// Helper function for generating a testing property
 fn test_property(property_name: &str) -> Property {
@@ -192,8 +190,10 @@ async fn test_update_shard_status() {
 async fn test_list_tenants() {
     let class = test_class("ListTenants2", true);
     let auth = AuthApiKey::new("test-key");
-    let client = WeaviateClient::builder("http://localhost:8080").auth_secret(auth)
-        .build().unwrap();
+    let client = WeaviateClient::builder("http://localhost:8080")
+        .auth_secret(auth)
+        .build()
+        .unwrap();
     let result = client.schema.create_class(&class).await;
     assert!(result.is_ok());
 

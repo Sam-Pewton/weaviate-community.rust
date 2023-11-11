@@ -56,6 +56,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_auth_secret(AuthApiKey::new("your-key"))
         .build()?;
 
+    // With multiple other API key (eg, OpenAI, JinaAI, ..)
+    let client = WeaviateClient::builder("http://localhost:8080")
+        .with_auth_secret(AuthApiKey::new("your-key"))
+        .with_api_key("X-OpenAI-Api-Key", "abcdefg")
+        .with_api_key("X-Jinaai-Api-Key", "hijklmn")
+        .build()?;
+
     Ok(())
 }
 ```
@@ -79,11 +86,11 @@ async fn schema_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> 
     let res = client.schema.get_class("Article").await?;
 
     // Create a new class in the schema
-    let my_class = Class::builder("Article", "All article information").build();
+    let my_class = Class::builder("Article").with_description("News article").build();
     let res = client.schema.create_class(&my_class).await?;
 
     // Update a class in the schema
-    let my_class = Class::builder("Article", "Updated information").build();
+    let my_class = Class::builder("Article").with_description("Updated information").build();
     let res = client.schema.update(&my_class).await?;
 
     // Add a property to a class
@@ -419,6 +426,12 @@ async fn health_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> 
 ## Classification endpoints
 ```rust
 async fn classification_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
+    // Schedule a new classification
+    let res = client.classification.schedule(.....).await?;
+    todo!();
+
+    // Get the status of a classification
+    let res = client.classification.get(.....).await?;
     todo!();
 
     Ok(())

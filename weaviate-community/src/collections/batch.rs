@@ -1,7 +1,7 @@
+use crate::collections::objects::Object;
 /// All batch associated type components
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::collections::objects::Object;
 
 /// A new BatchDeleteRequest used to make batch delete requests
 #[derive(Serialize, Deserialize, Debug)]
@@ -28,7 +28,7 @@ impl BatchDeleteRequest {
     /// # Example
     /// ```rust
     /// use weaviate_community::collections::batch::{BatchDeleteRequest, MatchConfig};
-    /// 
+    ///
     /// let map = serde_json::json!({
     ///     "operator": "NotEqual",
     ///     "path": ["name"],
@@ -61,7 +61,7 @@ impl BatchDeleteRequestBuilder {
     /// # Example
     /// ```rust
     /// use weaviate_community::collections::batch::{BatchDeleteRequestBuilder, MatchConfig};
-    /// 
+    ///
     /// let map = serde_json::json!({
     ///     "operator": "NotEqual",
     ///     "path": ["name"],
@@ -87,11 +87,11 @@ impl BatchDeleteRequestBuilder {
     /// # Example
     /// ```rust
     /// use weaviate_community::collections::batch::{
-    ///     BatchDeleteRequestBuilder, 
+    ///     BatchDeleteRequestBuilder,
     ///     MatchConfig,
     ///     Verbosity
     /// };
-    /// 
+    ///
     /// let map = serde_json::json!({
     ///     "operator": "NotEqual",
     ///     "path": ["name"],
@@ -115,10 +115,10 @@ impl BatchDeleteRequestBuilder {
     /// # Example
     /// ```rust
     /// use weaviate_community::collections::batch::{
-    ///     BatchDeleteRequestBuilder, 
+    ///     BatchDeleteRequestBuilder,
     ///     MatchConfig,
     /// };
-    /// 
+    ///
     /// let map = serde_json::json!({
     ///     "operator": "NotEqual",
     ///     "path": ["name"],
@@ -198,7 +198,10 @@ impl MatchConfig {
     /// let match_config = MatchConfig::new("Article", map);
     /// ```
     pub fn new(class: &str, match_where: serde_json::Value) -> MatchConfig {
-        MatchConfig { class: class.into(), match_where }
+        MatchConfig {
+            class: class.into(),
+            match_where,
+        }
     }
 }
 
@@ -264,7 +267,7 @@ pub struct DeleteObject {
 pub enum GeneralStatus {
     SUCCESS,
     FAILED,
-    DRYRUN
+    DRYRUN,
 }
 
 /// The ResultStatus of a request

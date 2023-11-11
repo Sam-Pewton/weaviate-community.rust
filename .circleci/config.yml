@@ -65,13 +65,24 @@ jobs:
           command: |
             docker exec -it tests sh -c "cd /weaviate-community && cargo test --doc"
       - run:
-          name: Run the SI tests (when running on master branch)
+          name: Run the SI tests
           command: |
             echo TODO
       - run:
           name: Stop Docker compose
           command: |
             docker-compose down
+
+  pre-publish:
+    # executor: my-executor
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: Check versions
+          command: |
+            bash .circleci/versions.sh
 
   publish:
     # executor: my-executor
@@ -84,10 +95,6 @@ jobs:
           command: |
             echo ${CIRCLE_BRANCH} |
             cut -f1 -d "-"
-      - run:
-          name: Check versions
-          command: |
-            bash .circleci/versions.sh
 
 workflows:
   version: 2
@@ -95,9 +102,13 @@ workflows:
     jobs:
       - lint
       - test
+      - pre-publish:
+          requires:
+            - lint
+            - test
       - publish:
           requires:
-            - test
+            - pre-publish
           filters:
             branches:
               only:
