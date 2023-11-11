@@ -7,7 +7,7 @@ executors:
     resource_class: small
 
 jobs:
-  si-test:
+  setup:
     executor: my-executor
     steps:
       - checkout
@@ -16,34 +16,43 @@ jobs:
           name: Start compose
           command: |
             set -x
-            docker-compose up -d
+            docker-compose create weaviate si-tests && docker-compose start weaviate si-tests
       - run:
           name: See port bindings
           command: |
             docker ps
+
+  unit-test:
+    executor: my-executor
+    steps:
+  si-test:
+    executor: my-executor
+    steps:
       - run:
           name: Curl the meta endpoint
           command: |
-            docker exec -it si-tests curl weaviate:8080/v1/meta
-      - run:
-          name: Stop Docker compose
-          command: |
-            docker-compose down
+            docker exec -it tests 
+
   publish:
     executor: my-executor
     steps:
-      - checkout
-      - setup_remote_docker
       - run:
           name: Placeholder
           command: |
             echo "This will publish the latest version to crates.io and tag the repo eventually"
+      - run:
+          name: Stop Docker compose
+          command: |
+            docker-compose down
 
 workflows:
   version: 2
   weaviate-community:
     jobs:
-      - si-test
+      - setup
+      - unit-test:
+          requires:
+            - setup
       - publish:
           requires:
             - si-test
