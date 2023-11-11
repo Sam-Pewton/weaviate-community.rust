@@ -48,9 +48,14 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Show current branch (git)
+          command: |
+            git describe --tags
+      - run:
           name: Show current branch
           command: |
-            echo ${CIRCLE_BRANCH}
+            echo ${CIRCLE_BRANCH} |
+            cut -f1 -d "-"
       - run:
           name: Show current tag
           command: |
