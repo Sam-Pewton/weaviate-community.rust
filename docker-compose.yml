@@ -94,14 +94,9 @@ services:
   tests:
     image: rust:latest
     container_name: 'tests'
-    command: 
-      - /bin/sh 
-      - -c 
-      - | 
-        cd /app/weaviate-community
-        sleep infinity
+    command: sleep infinity
     volumes:
-      - ./weaviate-community:/app
+      - .:/app
     networks:
       - cicd
 ...
