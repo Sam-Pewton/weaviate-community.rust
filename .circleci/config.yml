@@ -60,7 +60,7 @@ workflows:
             - setup
       - publish:
           requires:
-            - si-test
+            - unit-test
           filters:
             branches:
               only:
