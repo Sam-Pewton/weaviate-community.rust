@@ -16,7 +16,7 @@ jobs:
           name: Start compose
           command: |
             set -x
-            docker-compose create weaviate si-tests && docker-compose start weaviate si-tests
+            docker-compose create weaviate tests && docker-compose start weaviate tests
       - run:
           name: See port bindings
           command: |
