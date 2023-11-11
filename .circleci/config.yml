@@ -8,6 +8,30 @@ version: 2.1
   #     resource_class: small
 
 jobs:
+  lint:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Start compose
+          command: |
+            set -x
+            docker-compose create tests && docker-compose start tests
+      - run:
+          name: Add project to test container
+          command: |
+            docker cp ./weaviate-community tests:/weaviate-community
+      - run:
+          name: Run clippy
+          command: |
+            docker exec -it tests sh -c "cd /weaviate-community && cargo clippy
+      - run:
+          name: Stop Docker compose
+          command: |
+            docker-compose down
+    
   test:
     # executor: my-executor
     docker:
@@ -15,35 +39,35 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      # - run:
-      #     name: Start compose
-      #     command: |
-      #       set -x
-      #       docker-compose create weaviate tests && docker-compose start weaviate tests
-      # - run:
-      #     name: Add project to test container
-      #     command: |
-      #       docker cp ./weaviate-community tests:/weaviate-community
-      # - run:
-      #     name: See port bindings
-      #     command: |
-      #       docker ps
-      # - run:
-      #     name: Run the --lib tests
-      #     command: |
-      #       docker exec -it tests sh -c "cd /weaviate-community && cargo test --lib"
-      # - run:
-      #     name: Run the --doc tests
-      #     command: |
-      #       docker exec -it tests sh -c "cd /weaviate-community && cargo test --doc"
-      # - run:
-      #     name: Run the SI tests (when running on master branch)
-      #     command: |
-      #       echo TODO
-      # - run:
-      #     name: Stop Docker compose
-      #     command: |
-      #       docker-compose down
+      - run:
+          name: Start compose
+          command: |
+            set -x
+            docker-compose create weaviate tests && docker-compose start weaviate tests
+      - run:
+          name: Add project to test container
+          command: |
+            docker cp ./weaviate-community tests:/weaviate-community
+      - run:
+          name: See port bindings
+          command: |
+            docker ps
+      - run:
+          name: Run the --lib tests
+          command: |
+            docker exec -it tests sh -c "cd /weaviate-community && cargo test --lib"
+      - run:
+          name: Run the --doc tests
+          command: |
+            docker exec -it tests sh -c "cd /weaviate-community && cargo test --doc"
+      - run:
+          name: Run the SI tests (when running on master branch)
+          command: |
+            echo TODO
+      - run:
+          name: Stop Docker compose
+          command: |
+            docker-compose down
 
   publish:
     # executor: my-executor
@@ -65,12 +89,13 @@ workflows:
   version: 2
   weaviate-community:
     jobs:
+      - lint
       - test
       - publish:
           requires:
             - test
-              # filters:
-              #   branches:
-              #     only:
-              #       - main
+          filters:
+            branches:
+              only:
+                - main
 ...
