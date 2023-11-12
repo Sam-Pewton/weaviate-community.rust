@@ -425,14 +425,34 @@ async fn health_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> 
 
 ## Classification endpoints
 ```rust
+use uuid::Uuid;
+use weaviate_community::collections::classification::{
+    ClassificationRequest,
+    ClassificationType
+};
 async fn classification_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
     // Schedule a new classification
-    let res = client.classification.schedule(.....).await?;
-    todo!();
+    let req = ClassificationRequest::builder()
+        .with_type(ClassificationType::KNN)
+        .with_class("Article")
+        .with_based_on_properties(vec!["summary"])
+        .with_classify_properties(vec!["hasPopularity"])
+        .with_filters(serde_json::json!({
+            "trainingSetWhere": {
+                "path": ["wordCount"],
+                "operator": "GreaterThan",
+                "valueInt": 100
+            }
+        }))
+        .with_settings(serde_json::json!({
+            "k": 3
+        }))
+        .build();
+    let res = client.classification.schedule(req).await?;
 
     // Get the status of a classification
-    let res = client.classification.get(.....).await?;
-    todo!();
+    let uuid = Uuid::parse_str("00037775-1432-35e5-bc59-443baaef7d80")?;
+    let res = client.classification.get(uuid).await?;
 
     Ok(())
 }
@@ -440,14 +460,12 @@ async fn classification_endpoints(client: WeaviateClient) -> Result<(), Box<dyn 
 
 # Roadmap
 - SI test update
-- CI/CD update
-- Classification endpoints
 - Improvements to the GraphQL query system (and batch delete match config)
 - Module system for interacting with enabled modules
-- External auth keys in client (for OpenAI, HuggingFace, etc.)
-- Embedded functionality
 - Create full schema in one command
-- gRPC (longer term)
+- General improvements to try and remove as much serde_json in the deserialized objects..
+- Embedded functionality
+- gRPC (after beta testing for official clients)
 
 # Contributing
 Any bug reports and feature requests welcome on [GitHub][github-url]

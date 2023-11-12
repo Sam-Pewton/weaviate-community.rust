@@ -69,7 +69,7 @@ services:
         # AUTHORIZATION_ADMINLIST_USERS: 's.pewton@outlook.com'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       CONTEXTIONARY_URL: contextionary:9999
-      ENABLE_MODULES: 'backup-filesystem,text2vec-contextionary'
+      ENABLE_MODULES: 'backup-filesystem,text2vec-contextionary,text2vec-openai'
       DEFAULT_VECTORIZER_MODULE: 'text2vec-contextionary'
       BACKUP_FILESYSTEM_PATH: '/'
       CLUSTER_HOSTNAME: 'weaviate1'

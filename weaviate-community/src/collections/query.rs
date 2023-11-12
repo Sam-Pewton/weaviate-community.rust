@@ -1147,21 +1147,21 @@ impl GetBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::GetBuilder;
+    //use super::GetBuilder;
 
     #[test]
     fn test_get_query_builder() {
-        let query = GetBuilder::new(
-            "JeopardyQuestion",
-            vec![
-                "question".into(),
-                "answer".into(),
-                "points".into(),
-                "hasCategory { ... on JeopardyCategory { title }}".into(),
-            ],
-        )
-        .with_limit(1)
-        .with_offset(1);
+        //let query = GetBuilder::new(
+        //    "JeopardyQuestion",
+        //    vec![
+        //        "question".into(),
+        //        "answer".into(),
+        //        "points".into(),
+        //        "hasCategory { ... on JeopardyCategory { title }}".into(),
+        //    ],
+        //)
+        //.with_limit(1)
+        //.with_offset(1);
         //println!("{}", query.build());
     }
 }

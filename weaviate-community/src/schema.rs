@@ -44,11 +44,8 @@ impl Schema {
             reqwest::StatusCode::OK => {
                 let res: Class = res.json().await?;
                 Ok(res)
-            }
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling get_class endpoint.",
-                res.status()
-            )))),
+            },
+            _ => Err(self.get_err_msg("get class", res).await),
         }
     }
 
@@ -67,21 +64,13 @@ impl Schema {
     /// }
     /// ```
     pub async fn get(&self) -> Result<Classes, Box<dyn Error>> {
-        //let res = self.client.get(self.endpoint.clone()).send().await?;
-
-        //println!("{:#?}", res.json::<serde_json::Value>().await);
         let res = self.client.get(self.endpoint.clone()).send().await?;
         match res.status() {
             reqwest::StatusCode::OK => {
                 let res: Classes = res.json().await?;
-                //let res2 = res.json::<serde_json::Value>().await?;
-                //let res: Classes = serde_json::from_value(res2)?;
                 Ok(res)
             }
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling create_class endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("get schema", res).await),
         }
     }
 
@@ -118,10 +107,7 @@ impl Schema {
                 let res: Class = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling create_class endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("create class", res).await),
         }
     }
 
@@ -146,10 +132,7 @@ impl Schema {
         let res = self.client.delete(endpoint).send().await?;
         match res.status() {
             reqwest::StatusCode::OK => Ok(true),
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling delete endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("delete class", res).await),
         }
     }
 
@@ -175,10 +158,7 @@ impl Schema {
                 let res: Class = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling update endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("update class", res).await),
         }
     }
 
@@ -200,10 +180,7 @@ impl Schema {
                 let res: Property = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling add_property endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("add property", res).await),
         }
     }
 
@@ -221,10 +198,7 @@ impl Schema {
                 let shards = Shards { shards };
                 Ok(shards)
             }
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling get_shards endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("get shards", res).await),
         }
     }
 
@@ -248,10 +222,7 @@ impl Schema {
                 name: shard_name.into(),
                 status,
             }),
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling update class shard endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("update class shard", res).await),
         }
     }
 
@@ -269,10 +240,7 @@ impl Schema {
                 let tenants = Tenants { tenants };
                 Ok(tenants)
             }
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling list_tenants endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("list tenants", res).await),
         }
     }
 
@@ -295,10 +263,7 @@ impl Schema {
                 let tenants = Tenants { tenants };
                 Ok(tenants)
             }
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling list_tenants endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("add tenants", res).await),
         }
     }
 
@@ -317,10 +282,7 @@ impl Schema {
         let res = self.client.delete(endpoint).json(&payload).send().await?;
         match res.status() {
             reqwest::StatusCode::OK => Ok(true),
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling remove_tenants endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("remove tenants", res).await),
         }
     }
 
@@ -347,11 +309,32 @@ impl Schema {
                 let tenants = Tenants { tenants };
                 Ok(tenants)
             }
-            _ => Err(Box::new(SchemaError(format!(
-                "status code {} received when calling update_tenants endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("update tenants", res).await),
         }
+    }
+
+    /// Get the error message for the endpoint
+    ///
+    /// Made to reduce the boilerplate error message building
+    async fn get_err_msg(&self, endpoint: &str, res: reqwest::Response) -> Box<SchemaError> {
+        let status_code = res.status();
+        let msg: Result<serde_json::Value, reqwest::Error> = res.json().await;
+        let r_str: String;
+        if let Ok(json) = msg {
+            r_str = format!(
+                "Status code `{}` received when calling {} endpoint. Response: {}",
+                status_code,
+                endpoint,
+                json,
+            );
+        } else {
+            r_str = format!(
+                "Status code `{}` received when calling {} endpoint.",
+                status_code,
+                endpoint
+            );
+        }
+        Box::new(SchemaError(r_str))
     }
 }
 

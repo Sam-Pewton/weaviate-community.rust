@@ -1,7 +1,6 @@
 /// All schema associated type components
 /// https://weaviate.io/developers/weaviate/config-refs/schema#auto-schema
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Storage for multiple classes.
 #[derive(Serialize, Deserialize, Debug)]
@@ -249,10 +248,10 @@ impl ClassBuilder {
     /// use weaviate_community::collections::schema::ClassBuilder;
     ///
     /// let builder = ClassBuilder::new("Article")
-    ///     .with_module_config("");
+    ///     .with_module_config(serde_json::json!({}));
     /// ```
-    pub fn with_module_config(mut self, module_config: &str) -> ClassBuilder {
-        self.module_config = Some(module_config.into());
+    pub fn with_module_config(mut self, module_config: serde_json::Value) -> ClassBuilder {
+        self.module_config = Some(module_config);
         self
     }
 
@@ -423,7 +422,7 @@ pub struct Property {
     pub tokenization: Option<Tokenization>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub module_config: Option<HashMap<String, HashMap<String, bool>>>,
+    pub module_config: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub index_filterable: Option<bool>,
@@ -464,7 +463,7 @@ pub struct PropertyBuilder {
     pub data_type: Vec<String>,
     pub description: Option<String>,
     pub tokenization: Option<Tokenization>,
-    pub module_config: Option<HashMap<String, HashMap<String, bool>>>,
+    pub module_config: Option<serde_json::Value>,
     pub index_filterable: Option<bool>,
     pub index_searchable: Option<bool>,
     pub inverted_index_config: Option<InvertedIndexConfig>,
@@ -551,7 +550,7 @@ impl PropertyBuilder {
     /// ```
     pub fn with_module_config(
         mut self,
-        module_config: HashMap<String, HashMap<String, bool>>,
+        module_config: serde_json::Value,
     ) -> PropertyBuilder {
         self.module_config = Some(module_config);
         self

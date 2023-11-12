@@ -49,6 +49,9 @@ pub struct Object {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub vector_weights: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub additional: Option<serde_json::Value>,
 }
 
 impl Object {
@@ -207,6 +210,7 @@ impl ObjectBuilder {
             creation_time_unix: self.creation_time_unix,
             last_update_time_unix: self.last_update_time_unix,
             vector_weights: self.vector_weights,
+            additional: None
         }
     }
 }

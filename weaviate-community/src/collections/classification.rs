@@ -1,5 +1,6 @@
 /// All classification associated type components
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// A new ClassificationRequest used to make classification requests
 #[derive(Serialize, Deserialize, Debug)]
@@ -252,7 +253,7 @@ pub enum ClassificationType {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ClassificationResponse {
-    pub id: String,
+    pub id: Uuid,
     pub class: String,
     pub classify_properties: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -273,7 +274,7 @@ pub struct ClassificationResponse {
 pub struct ClassificationMetadata {
     pub started: String,
     pub completed: String,
-    pub count: u64,
-    pub count_succeeded: u64,
-    pub count_failed: u64,
+    pub count: Option<u64>,
+    pub count_succeeded: Option<u64>,
+    pub count_failed: Option<u64>,
 }
