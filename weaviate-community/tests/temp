@@ -1,0 +1,723 @@
+        let client = WeaviateClient::builder("https://edu-demo.weaviate.network")
+            .with_auth_secret(AuthApiKey::new("learn-weaviate"))
+            .build()
+            .unwrap();
+
+        let client2 = WeaviateClient::builder("http://localhost:8080")
+            .build()
+            .unwrap();
+
+        //let req = ClassificationRequest::builder()
+        //    .with_type(ClassificationType::KNN)
+        //    .with_class("Article")
+        //    .with_based_on_properties(vec!["summary"])
+        //    .with_classify_properties(vec!["hasPopularity"])
+        //    .with_filters(serde_json::json!({
+        //        "trainingSetWhere": {
+        //            "path": ["wordCount"],
+        //            "operator": "GreaterThan",
+        //            "valueInt": 100
+        //        }
+        //    }))
+        //    .with_settings(serde_json::json!({
+        //        "k": 3
+        //    }))
+        //    .build();
+        
+
+        let category = Class::builder("Category")
+            .with_description("Category an article belongs to")
+            .with_properties(
+                Properties::new(
+                    vec![
+                        Property::builder("name", vec!["text"])
+                            .with_description("Category name")
+                            .with_tokenization(Tokenization::FIELD)
+                            .with_module_config(
+                                serde_json::json!({
+                                    "text2vec-contextionary": {
+                                        "skip": false,
+                                        "vectorizePropertyName": false
+                                    }
+                                })
+                            )
+                            .with_index_filterable(true)
+                            .with_index_searchable(true)
+                            .build()
+                    ]
+                )
+            )
+            .with_vector_index_type(VectorIndexType::HNSW)
+            .with_vector_index_config(
+                VectorIndexConfig::builder()
+                    .with_distance(crate::collections::schema::DistanceMetric::COSINE)
+                    .with_ef(-1)
+                    .with_ef_construction(128)
+                    .with_max_connections(64)
+                    .with_dynamic_ef_min(100)
+                    .with_dynamic_ef_max(500)
+                    .with_dynamic_ef_factor(8)
+                    .with_vector_cache_max_objects(1000000000000)
+                    .with_cleanup_interval_seconds(300)
+                    .with_pq(
+                        PqConfig::builder()
+                            .with_enabled(false)
+                            .with_training_limit(100000)
+                            .with_segments(0)
+                            .with_centroids(256)
+                            .with_encoder(
+                                EncoderConfig::builder(EncoderType::KMEANS)
+                                    .with_distribution(Distribution::LOGNORMAL)
+                                    .build()
+                            )
+                            .with_bit_compression(false)
+                            .build()
+                    )
+                    .with_skip(false)
+                    .build()
+            )
+            .with_vectorizer("text2vec-contextionary")
+            .with_module_config(
+                serde_json::json!({
+                    "text2vec-contextionary": {
+                        "model": "ada",
+                        "modelVersion": "002",
+                        "type": "text",
+                        "vectorizeClassName": false
+                    }
+                })
+            )
+            .with_inverted_index_config(
+                InvertedIndexConfig::builder()
+                    .with_stopwords(
+                        StopwordsConfig::builder()
+                            .with_preset(StopwordPreset::EN)
+                            .build()
+                    )
+                    .with_index_timestamps(true)
+                    .with_bm25(Bm25::new(0.75, 1.2))
+                    .with_cleanup_interval_seconds(60)
+                    .build()
+            )
+            .with_sharding_config(
+                ShardingConfig::builder()
+                    .with_virtual_per_physical(128)
+                    .with_desired_count(1)
+                    .with_actual_count(1)
+                    .with_desired_virtual_count(128)
+                    .with_actual_virtual_count(128)
+                    .with_key(ShardingKey::_ID)
+                    .with_strategy(ShardingStrategy::HASH)
+                    .with_function(ShardingFunction::MURMUR3)
+                    .build()
+            )
+            .with_replication_config(
+                ReplicationConfig::new(1)
+            )
+            .build();
+
+        let article = Class::builder("Article")
+            .with_description("A news article")
+            .with_properties(
+                Properties::new(
+                    vec![
+                        Property::builder("title", vec!["text"])
+                            .with_description("Title of the article")
+                            .with_tokenization(Tokenization::WORD)
+                            .with_module_config(
+                                serde_json::json!({
+                                    "text2vec-contextionary": {
+                                        "skip": false,
+                                        "vectorizePropertyName": false
+                                    }
+                                })
+                            )
+                            .with_index_filterable(true)
+                            .with_index_searchable(true)
+                            .build(),
+                        Property::builder("url", vec!["text"])
+                            .with_description("The url of the article")
+                            .with_tokenization(Tokenization::FIELD)
+                            .with_module_config(
+                                serde_json::json!({
+                                    "text2vec-contextionary": {
+                                        "vectorizePropertyName": false,
+                                        "skip": false
+                                    }
+                                })
+                            )
+                            .with_index_filterable(false)
+                            .with_index_searchable(false)
+                            .build(),
+                        Property::builder("summary", vec!["text"])
+                            .with_description("The summary of the article")
+                            .with_tokenization(Tokenization::WORD)
+                            .with_module_config(
+                                serde_json::json!({
+                                    "text2vec-contextionary": {
+                                        "skip": false,
+                                        "vectorizePropertyName": false
+                                    }
+                                })
+                            )
+                            .with_index_filterable(true)
+                            .with_index_searchable(true)
+                            .build(),
+                        Property::builder("publicationDate", vec!["date"])
+                            .with_description("The date of publication of the article")
+                            .with_module_config(
+                                serde_json::json!({
+                                    "text2vec-contextionary": {
+                                        "skip": false,
+                                        "vectorizePropertyName": false
+                                    }
+                                })
+                            )
+                            .with_index_filterable(true)
+                            .with_index_searchable(false)
+                            .build(),
+                        Property::builder("wordCount", vec!["int"])
+                            .with_description("Words in this article")
+                            .with_module_config(
+                                serde_json::json!({
+                                    "text2vec-contextionary": {
+                                        "skip": false,
+                                        "vectorizePropertyName": false
+                                    }
+                                })
+                            )
+                            .with_index_filterable(true)
+                            .with_index_searchable(false)
+                            .build(),
+                        Property::builder("isAccessible", vec!["boolean"])
+                            .with_description("Whether the article is currently accesible through the url")
+                            .with_module_config(
+                                serde_json::json!({
+                                    "text2vec-contextionary": {
+                                        "skip": false,
+                                        "vectorizePropertyName": false
+                                    }
+                                })
+                            )
+                            .with_index_filterable(true)
+                            .with_index_searchable(false)
+                            .build(),
+                        //Property::builder("hasAuthors", vec!["Author", "Publication"])
+                        //    .with_description("Authors this article has")
+                        //    .with_module_config(
+                        //        serde_json::json!({
+                        //            "text2vec-contextionary": {
+                        //                "skip": false,
+                        //                "vectorizePropertyName": false
+                        //            }
+                        //        })
+                        //    )
+                        //    .with_index_filterable(true)
+                        //    .with_index_searchable(false)
+                        //    .build(),
+                        //Property::builder("inPublication", vec!["Publication"])
+                        //    .with_description("Publication this article has appeared in")
+                        //    .with_module_config(
+                        //        serde_json::json!({
+                        //            "text2vec-contextionary": {
+                        //                "skip": false,
+                        //                "vectorizePropertyName": false
+                        //            }
+                        //        })
+                        //    )
+                        //    .with_index_filterable(true)
+                        //    .with_index_searchable(false)
+                        //    .build(),
+                        //Property::builder("ofCategory", vec!["Category"])
+                        //    .with_description("Category that the article belongs to")
+                        //    .with_module_config(
+                        //        serde_json::json!({
+                        //            "text2vec-contextionary": {
+                        //                "skip": false,
+                        //                "vectorizePropertyName": false
+                        //            }
+                        //        })
+                        //    )
+                        //    .with_index_filterable(true)
+                        //    .with_index_searchable(false)
+                        //    .build(),
+                    ]
+                )
+            )
+            .with_vector_index_type(VectorIndexType::HNSW)
+            .with_vector_index_config(
+                VectorIndexConfig::builder()
+                    .with_distance(crate::collections::schema::DistanceMetric::COSINE)
+                    .with_ef(-1)
+                    .with_ef_construction(128)
+                    .with_max_connections(64)
+                    .with_dynamic_ef_min(100)
+                    .with_dynamic_ef_max(500)
+                    .with_dynamic_ef_factor(8)
+                    .with_vector_cache_max_objects(1000000000000)
+                    .with_cleanup_interval_seconds(300)
+                    .with_pq(
+                        PqConfig::builder()
+                            .with_enabled(false)
+                            .with_training_limit(100000)
+                            .with_segments(0)
+                            .with_centroids(256)
+                            .with_encoder(
+                                EncoderConfig::builder(EncoderType::KMEANS)
+                                    .with_distribution(Distribution::LOGNORMAL)
+                                    .build()
+                            )
+                            .with_bit_compression(false)
+                            .build()
+                    )
+                    .with_skip(false)
+                    .build()
+            )
+            .with_vectorizer("text2vec-contextionary")
+            .with_module_config(
+                serde_json::json!({
+                    "text2vec-contextionary": {
+                        "model": "ada",
+                        "modelVersion": "002",
+                        "type": "text",
+                        "vectorizeClassName": false
+                    }
+                })
+            )
+            .with_inverted_index_config(
+                InvertedIndexConfig::builder()
+                    .with_stopwords(
+                        StopwordsConfig::builder()
+                            .with_preset(StopwordPreset::EN)
+                            .build()
+                    )
+                    .with_index_timestamps(true)
+                    .with_bm25(Bm25::new(0.75, 1.2))
+                    .with_cleanup_interval_seconds(60)
+                    .build()
+            )
+            .with_sharding_config(
+                ShardingConfig::builder()
+                    .with_virtual_per_physical(128)
+                    .with_desired_count(1)
+                    .with_actual_count(1)
+                    .with_desired_virtual_count(128)
+                    .with_actual_virtual_count(128)
+                    .with_key(ShardingKey::_ID)
+                    .with_strategy(ShardingStrategy::HASH)
+                    .with_function(ShardingFunction::MURMUR3)
+                    .build()
+            )
+            .with_replication_config(
+                ReplicationConfig::new(1)
+            )
+            .build();
+
+        let author = Class::builder("Author")
+            .with_description("An author")
+            .with_properties(
+                Properties::new(
+                    vec![
+                        Property::builder("name", vec!["text"])
+                            .with_description("Name of the author")
+                            .with_tokenization(Tokenization::FIELD)
+                            .with_module_config(
+                                serde_json::json!({
+                                    "text2vec-contextionary": {
+                                        "skip": false,
+                                        "vectorizePropertyName": false
+                                    }
+                                })
+                            )
+                            .with_index_filterable(true)
+                            .with_index_searchable(true)
+                            .build(),
+                        //Property::builder("wroteArticles", vec!["Article"])
+                        //    .with_description("Articles this author wrote")
+                        //    .with_module_config(
+                        //        serde_json::json!({
+                        //            "text2vec-contextionary": {
+                        //                "vectorizePropertyName": false,
+                        //                "skip": false
+                        //            }
+                        //        })
+                        //    )
+                        //    .with_index_filterable(true)
+                        //    .with_index_searchable(false)
+                        //    .build(),
+                        //Property::builder("writesFor", vec!["text"])
+                        //    .with_description("A publication this author has written for")
+                        //    .with_tokenization(Tokenization::WORD)
+                        //    .with_module_config(
+                        //        serde_json::json!({
+                        //            "text2vec-contextionary": {
+                        //                "skip": false,
+                        //                "vectorizePropertyName": false
+                        //            }
+                        //        })
+                        //    )
+                        //    .with_index_filterable(true)
+                        //    .with_index_searchable(false)
+                        //    .build(),
+                    ]
+                )
+            )
+            .with_vector_index_type(VectorIndexType::HNSW)
+            .with_vector_index_config(
+                VectorIndexConfig::builder()
+                    .with_distance(crate::collections::schema::DistanceMetric::COSINE)
+                    .with_ef(-1)
+                    .with_ef_construction(128)
+                    .with_max_connections(64)
+                    .with_dynamic_ef_min(100)
+                    .with_dynamic_ef_max(500)
+                    .with_dynamic_ef_factor(8)
+                    .with_vector_cache_max_objects(1000000000000)
+                    .with_cleanup_interval_seconds(300)
+                    .with_pq(
+                        PqConfig::builder()
+                            .with_enabled(false)
+                            .with_training_limit(100000)
+                            .with_segments(0)
+                            .with_centroids(256)
+                            .with_encoder(
+                                EncoderConfig::builder(EncoderType::KMEANS)
+                                    .with_distribution(Distribution::LOGNORMAL)
+                                    .build()
+                            )
+                            .with_bit_compression(false)
+                            .build()
+                    )
+                    .with_skip(false)
+                    .build()
+            )
+            .with_vectorizer("text2vec-contextionary")
+            .with_module_config(
+                serde_json::json!({
+                    "text2vec-contextionary": {
+                        "model": "ada",
+                        "modelVersion": "002",
+                        "type": "text",
+                        "vectorizeClassName": false
+                    }
+                })
+            )
+            .with_inverted_index_config(
+                InvertedIndexConfig::builder()
+                    .with_stopwords(
+                        StopwordsConfig::builder()
+                            .with_preset(StopwordPreset::EN)
+                            .build()
+                    )
+                    .with_index_timestamps(true)
+                    .with_bm25(Bm25::new(0.75, 1.2))
+                    .with_cleanup_interval_seconds(60)
+                    .build()
+            )
+            .with_sharding_config(
+                ShardingConfig::builder()
+                    .with_virtual_per_physical(128)
+                    .with_desired_count(1)
+                    .with_actual_count(1)
+                    .with_desired_virtual_count(128)
+                    .with_actual_virtual_count(128)
+                    .with_key(ShardingKey::_ID)
+                    .with_strategy(ShardingStrategy::HASH)
+                    .with_function(ShardingFunction::MURMUR3)
+                    .build()
+            )
+            .with_replication_config(
+                ReplicationConfig::new(1)
+            )
+            .build();
+
+        let publication = Class::builder("Publication")
+            .with_description("A publication with an online source")
+            .with_properties(
+                Properties::new(
+                    vec![
+                        Property::builder("name", vec!["text"])
+                            .with_description("Name of the publication")
+                            .with_tokenization(Tokenization::WHITESPACE)
+                            .with_module_config(
+                                serde_json::json!({
+                                    "text2vec-contextionary": {
+                                        "skip": false,
+                                        "vectorizePropertyName": false
+                                    }
+                                })
+                            )
+                            .with_index_filterable(true)
+                            .with_index_searchable(true)
+                            .build(),
+                        Property::builder("headquartersGeoLocation", vec!["geoCoordinates"])
+                            .with_description("Geo location of the HQ")
+                            .with_module_config(
+                                serde_json::json!({
+                                    "text2vec-contextionary": {
+                                        "vectorizePropertyName": false,
+                                        "skip": false
+                                    }
+                                })
+                            )
+                            .with_index_filterable(true)
+                            .with_index_searchable(false)
+                            .build(),
+                        //Property::builder("hasArticles", vec!["Article"])
+                        //    .with_description("The articles this publication has")
+                        //    .with_module_config(
+                        //        serde_json::json!({
+                        //            "text2vec-contextionary": {
+                        //                "skip": false,
+                        //                "vectorizePropertyName": false
+                        //            }
+                        //        })
+                        //    )
+                        //    .with_index_filterable(true)
+                        //    .with_index_searchable(false)
+                        //    .build(),
+                    ]
+                )
+            )
+            .with_vector_index_type(VectorIndexType::HNSW)
+            .with_vector_index_config(
+                VectorIndexConfig::builder()
+                    .with_distance(crate::collections::schema::DistanceMetric::COSINE)
+                    .with_ef(-1)
+                    .with_ef_construction(128)
+                    .with_max_connections(64)
+                    .with_dynamic_ef_min(100)
+                    .with_dynamic_ef_max(500)
+                    .with_dynamic_ef_factor(8)
+                    .with_vector_cache_max_objects(1000000000000)
+                    .with_cleanup_interval_seconds(300)
+                    .with_pq(
+                        PqConfig::builder()
+                            .with_enabled(false)
+                            .with_training_limit(100000)
+                            .with_segments(0)
+                            .with_centroids(256)
+                            .with_encoder(
+                                EncoderConfig::builder(EncoderType::KMEANS)
+                                    .with_distribution(Distribution::LOGNORMAL)
+                                    .build()
+                            )
+                            .with_bit_compression(false)
+                            .build()
+                    )
+                    .with_skip(false)
+                    .build()
+            )
+            .with_vectorizer("text2vec-contextionary")
+            .with_module_config(
+                serde_json::json!({
+                    "text2vec-contextionary": {
+                        "model": "ada",
+                        "modelVersion": "002",
+                        "type": "text",
+                        "vectorizeClassName": false
+                    }
+                })
+            )
+            .with_inverted_index_config(
+                InvertedIndexConfig::builder()
+                    .with_stopwords(
+                        StopwordsConfig::builder()
+                            .with_preset(StopwordPreset::EN)
+                            .build()
+                    )
+                    .with_index_timestamps(true)
+                    .with_bm25(Bm25::new(0.75, 1.2))
+                    .with_cleanup_interval_seconds(60)
+                    .build()
+            )
+            .with_sharding_config(
+                ShardingConfig::builder()
+                    .with_virtual_per_physical(128)
+                    .with_desired_count(1)
+                    .with_actual_count(1)
+                    .with_desired_virtual_count(128)
+                    .with_actual_virtual_count(128)
+                    .with_key(ShardingKey::_ID)
+                    .with_strategy(ShardingStrategy::HASH)
+                    .with_function(ShardingFunction::MURMUR3)
+                    .build()
+            )
+            .with_replication_config(
+                ReplicationConfig::new(1)
+            )
+            .build();
+
+        // hasAuthors
+        // inPublication
+        // ofCategory
+
+
+        //let req2 = serde_json::json!({
+        //    "class": "Article",
+        //    "type": "knn",
+        //    "settings": {
+        //        "k": 3
+        //    },
+        //    "basedOnProperties": [
+        //        "summary"
+        //    ],
+        //    "classifyProperties": [
+        //        "hasPopularity"
+        //    ],
+        //    "filters": {
+        //        "trainingSetWhere": {"path": ["wordCount"], "operator": "GreaterThan", "valueInt": 100}
+        //    }
+        //});
+
+        //let res = client.classification.schedule(req).await;
+        //let res = client.meta.get_meta().await;
+        //let res = client.schema.get_class("Publication").await;
+        let res = client2.schema.create_class(&category).await;
+        let res = client2.schema.create_class(&publication).await;
+        let res = client2.schema.create_class(&article).await;
+        let res = client2.schema.create_class(&author).await;
+
+        let res = client2.schema.add_property(
+            "Publication",
+            &Property::builder("hasArticles", vec!["Article"])
+                .with_description("The articles this publication has")
+                .with_module_config(
+                    serde_json::json!({
+                        "text2vec-contextionary": {
+                            "skip": false,
+                            "vectorizePropertyName": false
+                        }
+                    })
+                    )
+                .with_index_filterable(true)
+                .with_index_searchable(false)
+                .build(),
+        ).await;
+        let res = client2.schema.add_property(
+            "Article",
+            &Property::builder("hasAuthors", vec!["Author", "Publication"])
+                .with_description("Authors this article has")
+                .with_module_config(
+                    serde_json::json!({
+                        "text2vec-contextionary": {
+                            "skip": false,
+                            "vectorizePropertyName": false
+                        }
+                    })
+                )
+                .with_index_filterable(true)
+                .with_index_searchable(false)
+                .build(),
+        ).await;
+        let res = client2.schema.add_property(
+            "Article",
+            &Property::builder("inPublication", vec!["Publication"])
+                .with_description("Publication this article has appeared in")
+                .with_module_config(
+                    serde_json::json!({
+                        "text2vec-contextionary": {
+                            "skip": false,
+                            "vectorizePropertyName": false
+                        }
+                    })
+                )
+                .with_index_filterable(true)
+                .with_index_searchable(false)
+                .build(),
+        ).await;
+        let res = client2.schema.add_property(
+            "Article",
+            &Property::builder("ofCategory", vec!["Category"])
+                .with_description("Category that the article belongs to")
+                .with_module_config(
+                    serde_json::json!({
+                        "text2vec-contextionary": {
+                            "skip": false,
+                            "vectorizePropertyName": false
+                        }
+                    })
+                )
+                .with_index_filterable(true)
+                .with_index_searchable(false)
+                .build(),
+        ).await;
+        println!("{:?}", res);
+        let res = client2.schema.add_property(
+            "Author",
+            &Property::builder("wroteArticles", vec!["Article"])
+                .with_description("Articles this author wrote")
+                .with_module_config(
+                    serde_json::json!({
+                        "text2vec-contextionary": {
+                            "vectorizePropertyName": false,
+                            "skip": false
+                        }
+                    })
+                )
+                .with_index_filterable(true)
+                .with_index_searchable(false)
+                .build(),
+        ).await;
+        let res = client2.schema.add_property(
+            "Author",
+            &Property::builder("writesFor", vec!["text"])
+                .with_description("A publication this author has written for")
+                .with_tokenization(Tokenization::WORD)
+                .with_module_config(
+                    serde_json::json!({
+                        "text2vec-contextionary": {
+                            "skip": false,
+                            "vectorizePropertyName": false
+                        }
+                    })
+                )
+                .with_index_filterable(true)
+                .with_index_searchable(false)
+                .build(),
+        ).await;
+
+        let params = ObjectListParameters::builder()
+            .with_class_name("Article")
+            .with_limit(1)
+            .build();
+        let mut res = client.objects.list(params).await.unwrap();
+        for i in 0..res.objects.len() {
+            res.objects.get_mut(i).unwrap().properties["inPublication"].take();
+            res.objects.get_mut(i).unwrap().properties["hasAuthors"].take();
+        }
+        println!("{:?}", res);
+
+        let res = client2.batch.objects_batch_add(res, None).await;
+        //let res = client2.objects.create(res.objects.get(0).unwrap(), None).await;
+
+        //println!("{:#?}", res);
+        let req = ClassificationRequest::builder()
+            .with_type(ClassificationType::KNN)
+            .with_class("Article")
+            .with_based_on_properties(vec!["summary"])
+            .with_classify_properties(vec!["hasAuthors"])
+            .with_filters(serde_json::json!({
+                "trainingSetWhere": {
+                    "path": ["wordCount"],
+                    "operator": "GreaterThan",
+                    "valueInt": 100
+                }
+            }))
+            .with_settings(serde_json::json!({
+                "k": 3
+            }))
+            .build();
+        let res = client2.classification.schedule(req).await;
+        println!("{:?}", res);
+        let res = client2.classification.get(res.unwrap().id).await;
+        println!("{:?}", res);
+
+        let res = client2.objects.get(
+            "Article",
+            &Uuid::parse_str("00037775-1432-35e5-bc59-443baaef7d80").unwrap(),
+            Some("classification"),
+            None,
+            None,
+        ).await;
+        println!("{:#?}", res);

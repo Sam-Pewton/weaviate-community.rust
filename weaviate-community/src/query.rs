@@ -206,7 +206,6 @@ impl Query {
 
 #[cfg(test)]
 mod tests {
-    use crate::collections::auth::AuthApiKey;
     use crate::collections::query::RawQuery;
     use crate::collections::query::{AggregateBuilder, ExploreBuilder, GetBuilder};
     use crate::WeaviateClient;

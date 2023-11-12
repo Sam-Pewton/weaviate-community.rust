@@ -275,6 +275,7 @@ mod tests {
                 creation_time_unix: None,
                 last_update_time_unix: None,
                 vector_weights: None,
+                additional: None
             }],
         }
     }

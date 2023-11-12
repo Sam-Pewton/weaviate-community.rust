@@ -97,6 +97,6 @@ impl Error for ClassificationError {}
 
 impl Display for ClassificationError {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "NodesError: {}", self.0)
+        write!(f, "ClassificationErEror: {}", self.0)
     }
 }

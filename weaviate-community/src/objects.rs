@@ -106,10 +106,7 @@ impl Objects {
                 let res: MultiObjects = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling list objects endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("list objects", res).await),
         }
     }
 
@@ -133,16 +130,7 @@ impl Objects {
     ///     let properties = serde_json::json!({
     ///         "name": "Jodi Kantor",
     ///     });
-    ///     let new = Object {
-    ///         class: "Publication".into(),
-    ///         properties,
-    ///         id: None,
-    ///         vector: None,
-    ///         tenant: None,
-    ///         creation_time_unix: None,
-    ///         last_update_time_unix: None,
-    ///         vector_weights: None,
-    ///     };
+    ///     let new = Object::builder("Publication", properties).build();
     ///     let res = client.objects.create(
     ///         &new,
     ///         None
@@ -169,10 +157,7 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling create object endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("create object", res).await)
         }
     }
 
@@ -232,10 +217,7 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling get object endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("get object", res).await),
         }
     }
 
@@ -288,10 +270,7 @@ impl Objects {
         let res = self.client.head(endpoint).send().await?;
         match res.status() {
             reqwest::StatusCode::NO_CONTENT => Ok(true),
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling exists (object) endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("object exists", res).await),
         }
     }
 
@@ -345,10 +324,7 @@ impl Objects {
         let res = self.client.patch(endpoint).json(&properties).send().await?;
         match res.status() {
             reqwest::StatusCode::NO_CONTENT => Ok(true),
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling update object endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("update object properties", res).await),
         }
     }
 
@@ -413,10 +389,7 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling update class endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("replace object properties", res).await),
         }
     }
 
@@ -468,10 +441,7 @@ impl Objects {
         let res = self.client.delete(endpoint).send().await?;
         match res.status() {
             reqwest::StatusCode::NO_CONTENT => Ok(true),
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling delete object endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("delete object", res).await),
         }
     }
 
@@ -514,10 +484,7 @@ impl Objects {
         let res = self.client.post(endpoint).json(&payload).send().await?;
         match res.status() {
             reqwest::StatusCode::OK => Ok(true),
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling validate object endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("validate object", res).await),
         }
     }
 
@@ -583,10 +550,7 @@ impl Objects {
         let res = self.client.post(endpoint).json(&payload).send().await?;
         match res.status() {
             reqwest::StatusCode::OK => Ok(true),
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling create object reference endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("add object reference", res).await),
         }
     }
 
@@ -675,10 +639,7 @@ impl Objects {
                 let res: Object = res.json().await?;
                 Ok(res)
             }
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling update object reference endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("update object reference", res).await),
         }
     }
 
@@ -743,11 +704,32 @@ impl Objects {
         let res = self.client.delete(endpoint).json(&payload).send().await?;
         match res.status() {
             reqwest::StatusCode::NO_CONTENT => Ok(true),
-            _ => Err(Box::new(QueryError(format!(
-                "status code {} received when calling delete class reference endpoint.",
-                res.status()
-            )))),
+            _ => Err(self.get_err_msg("delete object reference", res).await),
         }
+    }
+
+    /// Get the error message for the endpoint
+    ///
+    /// Made to reduce the boilerplate error message building
+    async fn get_err_msg(&self, endpoint: &str, res: reqwest::Response) -> Box<QueryError> {
+        let status_code = res.status();
+        let msg: Result<serde_json::Value, reqwest::Error> = res.json().await;
+        let r_str: String;
+        if let Ok(json) = msg {
+            r_str = format!(
+                "Status code `{}` received when calling {} endpoint. Response: {}",
+                status_code,
+                endpoint,
+                json,
+            );
+        } else {
+            r_str = format!(
+                "Status code `{}` received when calling {} endpoint.",
+                status_code,
+                endpoint
+            );
+        }
+        Box::new(QueryError(r_str))
     }
 }
 

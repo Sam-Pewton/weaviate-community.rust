@@ -348,6 +348,7 @@ impl BatchAddObject {
             creation_time_unix: self.creation_time_unix,
             last_update_time_unix: self.last_update_time_unix,
             vector_weights: self.vector_weights,
+            additional: None,
         }
     }
 }
