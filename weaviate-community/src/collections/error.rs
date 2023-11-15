@@ -100,3 +100,16 @@ impl Display for ClassificationError {
         write!(f, "ClassificationErEror: {}", self.0)
     }
 }
+
+/// Custom ModuleError, used when there was an incorrect status code for the
+/// modules endpoint.
+#[derive(Debug)]
+pub struct ModuleError(pub String);
+
+impl Error for ModuleError {}
+
+impl Display for ModuleError {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "ModuleErEror: {}", self.0)
+    }
+}

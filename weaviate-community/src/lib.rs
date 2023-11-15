@@ -17,7 +17,7 @@ pub use self::backups::Backups;
 pub use self::batch::Batch;
 pub use self::classification::Classification;
 pub use self::meta::Meta;
-pub use self::modules::_Modules;
+pub use self::modules::Modules;
 pub use self::nodes::Nodes;
 pub use self::objects::Objects;
 pub use self::oidc::Oidc;
@@ -44,7 +44,7 @@ pub struct WeaviateClient {
     pub meta: Meta,
     pub nodes: Nodes,
     pub oidc: Oidc,
-    pub modules: _Modules,
+    pub modules: Modules,
     pub query: Query,
 }
 
@@ -128,7 +128,7 @@ impl WeaviateClient {
         let meta = Meta::new(&base, Arc::clone(&client))?;
         let nodes = Nodes::new(&base, Arc::clone(&client))?;
         let oidc = Oidc::new(&base, Arc::clone(&client))?;
-        let modules = _Modules::new(&base, Arc::clone(&client))?;
+        let modules = Modules::new(&base, Arc::clone(&client))?;
         let query = Query::new(&base, Arc::clone(&client))?;
 
         Ok(WeaviateClient {
