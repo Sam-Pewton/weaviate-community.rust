@@ -143,7 +143,7 @@ async fn objects_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>>
     let res = client.objects.list(params).await?;
 
     // Create a new object
-    let my_object = Object::builder("Article", serde_json::json![{}]).build();
+    let my_object = Object::builder("Article", serde_json::json!({})).build();
     let res = client.objects.create(&my_object, None).await?;
 
     // Get an object based on its UUID
@@ -458,10 +458,28 @@ async fn classification_endpoints(client: WeaviateClient) -> Result<(), Box<dyn 
 }
 ```
 
+## Module (text2vec-contextionary) endpoints
+```rust
+use weaviate_community::collections::modules::ContextionaryExtend;
+async fn module_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
+    // Get a concept 
+    let res = client.modules.contextionary_get_concept("magazine").await?;
+
+    // Extend contextionary
+    let ext = ContextionaryExtension::new(
+        "weaviate",
+        "Open source cloud native real time vector database",
+        1.0
+    );
+    let res = client.modules.contextionary_extend(ext).await;
+
+    Ok(())
+}
+```
+
 # Roadmap
 - SI test update
 - Improvements to the GraphQL query system (and batch delete match config)
-- Module system for interacting with enabled modules
 - Create full schema in one command
 - General improvements to try and remove as much serde_json in the deserialized objects..
 - Embedded functionality
