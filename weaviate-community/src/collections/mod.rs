@@ -9,3 +9,4 @@ pub mod objects;
 pub mod oidc;
 pub mod query;
 pub mod schema;
+pub mod modules;

@@ -233,22 +233,19 @@ mod tests {
     }
 
     fn test_get_response() -> String {
-        let data = serde_json::to_string(&serde_json::json!(
-{
-  "data": {
-    "Get": {
-      "JeopardyQuestion": [
-        {
-          "answer": "Jonah",
-          "points": 100,
-          "question": "This prophet passed the time he spent inside a fish offering up prayers"
-        },
-        // shortened for brevity
-      ]
-    }
-  }
-}
-)).unwrap();
+        let data = serde_json::to_string(&serde_json::json!({
+            "data": {
+                "Get": {
+                    "JeopardyQuestion": [
+                        {
+                            "answer": "Jonah",
+                            "points": 100,
+                            "question": "This prophet passed the time he spent inside a fish offering up prayers"
+                        },
+                    ]
+                }
+            }
+        })).unwrap();
         data
     }
 
