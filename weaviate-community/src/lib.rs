@@ -1,6 +1,6 @@
 //! # weaviate-community
 //!
-//! Community client for handling Weaviate transactions written in Rust, for Rust.
+//! Community client for handling Weaviate vector database transactions written in Rust, for Rust.
 //! More information on Weaviate can be found on the official Weaviate webpage.
 mod backups;
 mod batch;
@@ -78,14 +78,11 @@ impl WeaviateClient {
     /// Using the WeaviateClientBuilder
     /// ```
     /// use weaviate_community::WeaviateClient;
-    /// use weaviate_community::collections::auth::AuthApiKey;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let auth = AuthApiKey::new("test-key");
-    ///
     ///     let client = WeaviateClient::builder("http://localhost:8080")
-    ///         .with_auth_secret(auth)
+    ///         .with_auth_secret("test-key")
     ///         .with_api_key("X-OpenAI-Api-Key", "your-key")
     ///         .build();
     ///     Ok(())
@@ -165,13 +162,11 @@ impl WeaviateClient {
     /// # Example
     /// ```
     /// use weaviate_community::WeaviateClient;
-    /// use weaviate_community::collections::auth::AuthApiKey;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let auth = AuthApiKey::new("test-key");
     ///     let client = WeaviateClient::builder("http://localhost:8080")
-    ///         .with_auth_secret(auth)
+    ///         .with_auth_secret("test-key")
     ///         .build()?;
     ///     let res = client.is_live().await;
     ///     Ok(())
@@ -195,13 +190,11 @@ impl WeaviateClient {
     /// # Example
     /// ```
     /// use weaviate_community::WeaviateClient;
-    /// use weaviate_community::collections::auth::AuthApiKey;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let auth = AuthApiKey::new("test-key");
     ///     let client = WeaviateClient::builder("http://localhost:8080")
-    ///         .with_auth_secret(auth)
+    ///         .with_auth_secret("test-key")
     ///         .build()?;
     ///     let res = client.is_ready().await;
     ///     Ok(())
@@ -231,11 +224,9 @@ impl WeaviateClient {
     /// Authenticated with API key
     /// ```
     /// use weaviate_community::WeaviateClient;
-    /// use weaviate_community::collections::auth::AuthApiKey;
     ///
-    /// let auth = AuthApiKey::new("your-key");
     /// let client = WeaviateClient::builder("http://localhost:8080")
-    ///     .with_auth_secret(auth)
+    ///     .with_auth_secret("your-key")
     ///     .build();
     /// ```
     pub fn builder(base_url: &str) -> WeaviateClientBuilder {
@@ -269,11 +260,9 @@ impl WeaviateClientBuilder {
     /// Authenticated with API key
     /// ```
     /// use weaviate_community::WeaviateClientBuilder;
-    /// use weaviate_community::collections::auth::AuthApiKey;
     ///
-    /// let auth = AuthApiKey::new("your-key");
     /// let client = WeaviateClientBuilder::new("http://localhost:8080")
-    ///     .with_auth_secret(auth)
+    ///     .with_auth_secret("your-key")
     ///     .build();
     /// ```
     pub fn new(base_url: &str) -> WeaviateClientBuilder {
@@ -292,15 +281,13 @@ impl WeaviateClientBuilder {
     /// # Example
     /// ```
     /// use weaviate_community::WeaviateClientBuilder;
-    /// use weaviate_community::collections::auth::AuthApiKey;
     ///
-    /// let auth = AuthApiKey::new("your-key");
     /// let client = WeaviateClientBuilder::new("http://localhost:8080")
-    ///     .with_auth_secret(auth)
+    ///     .with_auth_secret("your-key")
     ///     .build();
     /// ```
-    pub fn with_auth_secret(mut self, auth_secret: AuthApiKey) -> WeaviateClientBuilder {
-        self.auth_secret = Some(auth_secret);
+    pub fn with_auth_secret(mut self, auth_secret: &str) -> WeaviateClientBuilder {
+        self.auth_secret = Some(AuthApiKey::new(auth_secret));
         self
     }
 
@@ -313,9 +300,7 @@ impl WeaviateClientBuilder {
     /// # Example
     /// ```
     /// use weaviate_community::WeaviateClientBuilder;
-    /// use weaviate_community::collections::auth::AuthApiKey;
     ///
-    /// let auth = AuthApiKey::new("your-key");
     /// let client = WeaviateClientBuilder::new("http://localhost:8080")
     ///     .with_api_key("X-OpenAI-Api-Key", "abcdefg")
     ///     .build();

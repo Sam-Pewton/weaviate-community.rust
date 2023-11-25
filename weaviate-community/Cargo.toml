@@ -2,14 +2,14 @@
 name = "weaviate-community"
 # Update the README version number when updating crates.io
 # Create a new git tag
-version = "0.1.0"
+version = "0.2.0"
 repository = "https://github.com/Sam-Pewton/weaviate-community.rust"
 authors = ["Sam Pewton <s.pewton@outlook.com>"]
 readme = "README.md"
 license = "MIT"
 edition = "2021"
 description = """
-Community client for handling Weaviate transactions written in Rust, for Rust.
+Community client for handling Weaviate vector database transactions written in Rust, for Rust.
 """
 categories = ["asynchronous", "database", "vectors"]
 keywords = ["weaviate", "vector", "database"]
