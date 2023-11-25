@@ -14,7 +14,7 @@
 [rsdocs-url]: https://docs.rs/weaviate-community/0.1.0/weaviate_community/
 [weaviate-url]: https://weaviate.io/developers/weaviate
 
-Community client for handling Weaviate transactions written in Rust, for Rust.
+Community client for handling Weaviate vector database transactions written in Rust, for Rust.
 
 More information on Weaviate can be found on the official [Weaviate][weaviate-url] webpage.
 
@@ -27,11 +27,8 @@ cargo add weaviate-community
 
 or add the following to your `Cargo.toml` file
 ```text
-weaviate-community = "0.1.0"
+weaviate-community = "0.2.0"
 ```
-
-Note: the latest version is not yet published to crates.io. Once all the features are implemented,
-a new release version will be created.
 
 # Documentation
 The library reference documentation can be found [here][rsdocs-url]
@@ -53,12 +50,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     
     // With Auth key
     let client = WeaviateClient::builder("http://localhost:8080")
-        .with_auth_secret(AuthApiKey::new("your-key"))
+        .with_auth_secret("your-key")
         .build()?;
 
     // With multiple other API key (eg, OpenAI, JinaAI, ..)
     let client = WeaviateClient::builder("http://localhost:8080")
-        .with_auth_secret(AuthApiKey::new("your-key"))
+        .with_auth_secret("your-key")
         .with_api_key("X-OpenAI-Api-Key", "abcdefg")
         .with_api_key("X-Jinaai-Api-Key", "hijklmn")
         .build()?;
@@ -296,7 +293,7 @@ async fn batch_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
 
     let res = client.batch.objects_batch_add(
         MultiObjects::new(vec![article_a, article_b, author]), Some(ConsistencyLevel::ALL)
-    ).await;
+    ).await?;
 
     // Batch delete objects
     let req = BatchDeleteRequest::builder(
@@ -309,7 +306,7 @@ async fn batch_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
             })
         )
     ).build();
-    let res = client.batch.objects_batch_delete(req, Some(ConsistencyLevel::ALL)).await;
+    let res = client.batch.objects_batch_delete(req, Some(ConsistencyLevel::ALL)).await?;
 
     // Batch add references
     let references = References::new(vec![
@@ -328,7 +325,7 @@ async fn batch_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
             &article_b_uuid,
         ),
     ]);
-    let res = client.batch.references_batch_add(references, Some(ConsistencyLevel::ALL)).await;
+    let res = client.batch.references_batch_add(references, Some(ConsistencyLevel::ALL)).await?;
     
     Ok(())
 }
@@ -385,14 +382,14 @@ async fn querying(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
         .with_limit(1)
         .with_additional(vec!["id"])
         .build();
-    let res = client.query.get(query).await;
+    let res = client.query.get(query).await?;
 
     // Aggregate
     let query = AggregateQuery::builder("Article")
         .with_meta_count()
         .with_fields(vec!["wordCount {count maximum mean median minimum mode sum type}"])
         .build();
-    let res = client.query.aggregate(query).await;
+    let res = client.query.aggregate(query).await?;
 
     // Explore
     let query = ExploreQuery::builder()
@@ -400,7 +397,7 @@ async fn querying(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
         .with_near_vector("{vector: [-0.36840257,0.13973749,-0.28994447]}")
         .with_fields(vec!["beacon", "className", "certainty"])
         .build();
-    let res = client.query.explore(query).await;
+    let res = client.query.explore(query).await?;
 
     // Raw
     let query = RawQuery::new("{ Get { JeopardyQuestion { question answer points } } }");
@@ -471,7 +468,7 @@ async fn module_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> 
         "Open source cloud native real time vector database",
         1.0
     );
-    let res = client.modules.contextionary_extend(ext).await;
+    let res = client.modules.contextionary_extend(ext).await?;
 
     Ok(())
 }
