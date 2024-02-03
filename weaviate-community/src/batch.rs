@@ -132,7 +132,7 @@ impl Batch {
         }
 
         if let Some(t) = tenant {
-            endpoint.query_pairs_mut().append_pair("tenant", t);
+            endpoint.query_pairs_mut().append_pair("tenant", &t);
         }
 
         let payload = serde_json::to_value(&request_body)?;
