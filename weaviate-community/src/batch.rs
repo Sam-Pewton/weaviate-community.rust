@@ -113,7 +113,7 @@ impl Batch {
     ///         )
     ///     ).build();
     ///
-    ///     let res = client.batch.objects_batch_delete(req, Some(ConsistencyLevel::ALL)).await;
+    ///     let res = client.batch.objects_batch_delete(req, Some(ConsistencyLevel::ALL), None).await;
     ///
     ///     Ok(())
     /// }
@@ -122,7 +122,7 @@ impl Batch {
         &self,
         request_body: BatchDeleteRequest,
         consistency_level: Option<ConsistencyLevel>,
-        tenant: Option<String>,
+        tenant: Option<&str>,
     ) -> Result<BatchDeleteResponse, Box<dyn Error>> {
         let mut endpoint = self.endpoint.join("objects")?;
         if let Some(x) = consistency_level {
@@ -132,7 +132,7 @@ impl Batch {
         }
 
         if let Some(t) = tenant {
-            endpoint.query_pairs_mut().append_pair("tenant", &t);
+            endpoint.query_pairs_mut().append_pair("tenant", t);
         }
 
         let payload = serde_json::to_value(&request_body)?;
@@ -419,7 +419,7 @@ mod tests {
         let res_str = serde_json::to_string(&out).unwrap();
         let (mut mock_server, client) = get_test_harness();
         let mock = mock_delete(&mut mock_server, "/v1/batch/objects", 200, &res_str);
-        let res = client.batch.objects_batch_delete(req, None).await;
+        let res = client.batch.objects_batch_delete(req, None, None).await;
         mock.assert();
         assert!(res.is_ok());
     }
@@ -429,7 +429,7 @@ mod tests {
         let req = test_delete_objects();
         let (mut mock_server, client) = get_test_harness();
         let mock = mock_delete(&mut mock_server, "/v1/batch/objects", 401, "");
-        let res = client.batch.objects_batch_delete(req, None).await;
+        let res = client.batch.objects_batch_delete(req, None, None).await;
         mock.assert();
         assert!(res.is_err());
     }
