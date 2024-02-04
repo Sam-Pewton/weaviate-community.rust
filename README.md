@@ -325,7 +325,7 @@ async fn batch_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
             &article_b_uuid,
         ),
     ]);
-    let res = client.batch.references_batch_add(references, Some(ConsistencyLevel::ALL)).await?;
+    let res = client.batch.references_batch_add(references, Some(ConsistencyLevel::ALL), None).await?;
     
     Ok(())
 }
