@@ -2,7 +2,7 @@
 name = "weaviate-community"
 # Update the README version number when updating crates.io
 # Create a new git tag
-version = "0.2.0"
+version = "0.2.1"
 repository = "https://github.com/Sam-Pewton/weaviate-community.rust"
 authors = ["Sam Pewton <s.pewton@outlook.com>"]
 readme = "README.md"

@@ -11,7 +11,7 @@
 [circleci-url]: https://app.circleci.com/pipelines/github/Sam-Pewton/weaviate-community.rust
 [github-url]: https://github.com/Sam-Pewton/weaviate-community.rust
 [mit-url]: https://opensource.org/license/mit/
-[rsdocs-url]: https://docs.rs/weaviate-community/0.1.0/weaviate_community/
+[rsdocs-url]: https://docs.rs/weaviate-community/0.2.1/weaviate_community/
 [weaviate-url]: https://weaviate.io/developers/weaviate
 
 Community client for handling Weaviate vector database transactions written in Rust, for Rust.
@@ -27,7 +27,7 @@ cargo add weaviate-community
 
 or add the following to your `Cargo.toml` file
 ```text
-weaviate-community = "0.2.0"
+weaviate-community = "0.2.1"
 ```
 
 # Documentation
@@ -292,7 +292,10 @@ async fn batch_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
         .build();
 
     let res = client.batch.objects_batch_add(
-        MultiObjects::new(vec![article_a, article_b, author]), Some(ConsistencyLevel::ALL)
+        MultiObjects::new(
+            vec![article_a, article_b, author]),
+            Some(ConsistencyLevel::ALL),
+            None
     ).await?;
 
     // Batch delete objects
@@ -306,7 +309,11 @@ async fn batch_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
             })
         )
     ).build();
-    let res = client.batch.objects_batch_delete(req, Some(ConsistencyLevel::ALL)).await?;
+    let res = client.batch.objects_batch_delete(
+        req,
+        Some(ConsistencyLevel::ALL),
+        None
+    ).await?;
 
     // Batch add references
     let references = References::new(vec![
@@ -325,7 +332,11 @@ async fn batch_endpoints(client: WeaviateClient) -> Result<(), Box<dyn Error>> {
             &article_b_uuid,
         ),
     ]);
-    let res = client.batch.references_batch_add(references, Some(ConsistencyLevel::ALL), None).await?;
+    let res = client.batch.references_batch_add(
+        references,
+        Some(ConsistencyLevel::ALL),
+        None
+    ).await?;
     
     Ok(())
 }
