@@ -55,7 +55,9 @@ impl Batch {
     ///         .build();
     ///
     ///     let res = client.batch.objects_batch_add(
-    ///         MultiObjects::new(vec![article_a, article_b, author]), Some(ConsistencyLevel::ALL)
+    ///         MultiObjects::new(vec![article_a, article_b, author]),
+    ///         Some(ConsistencyLevel::ALL),
+    ///         None
     ///     ).await;
     ///
     ///     Ok(())
@@ -65,6 +67,7 @@ impl Batch {
         &self,
         objects: MultiObjects,
         consistency_level: Option<ConsistencyLevel>,
+        tenant: Option<&str>,
     ) -> Result<BatchAddObjects, Box<dyn Error>> {
         let mut endpoint = self.endpoint.join("objects")?;
         if let Some(x) = consistency_level {
@@ -72,6 +75,11 @@ impl Batch {
                 .query_pairs_mut()
                 .append_pair("consistency_level", x.value());
         }
+
+        if let Some(t) = tenant {
+            endpoint.query_pairs_mut().append_pair("tenant", t);
+        }
+
         let payload = serde_json::to_value(&objects)?;
         let res = self.client.post(endpoint).json(&payload).send().await?;
         match res.status() {
@@ -113,7 +121,11 @@ impl Batch {
     ///         )
     ///     ).build();
     ///
-    ///     let res = client.batch.objects_batch_delete(req, Some(ConsistencyLevel::ALL), None).await;
+    ///     let res = client.batch.objects_batch_delete(
+    ///         req,
+    ///         Some(ConsistencyLevel::ALL),
+    ///         None
+    ///     ).await;
     ///
     ///     Ok(())
     /// }
@@ -191,7 +203,8 @@ impl Batch {
     ///
     ///     let res = client.batch.references_batch_add(
     ///         references,
-    ///         Some(ConsistencyLevel::ALL)
+    ///         Some(ConsistencyLevel::ALL),
+    ///         None
     ///     ).await;
     ///
     ///     Ok(())
@@ -201,6 +214,7 @@ impl Batch {
         &self,
         references: References,
         consistency_level: Option<ConsistencyLevel>,
+        tenant: Option<&str>,
     ) -> Result<BatchAddReferencesResponse, Box<dyn Error>> {
         let mut converted: Vec<serde_json::Value> = Vec::new();
         for reference in references.0 {
@@ -226,6 +240,10 @@ impl Batch {
             endpoint
                 .query_pairs_mut()
                 .append_pair("consistency_level", &cl.value());
+        }
+
+        if let Some(t) = tenant {
+            endpoint.query_pairs_mut().append_pair("tenant", t);
         }
 
         let res = self.client.post(endpoint).json(&payload).send().await?;
@@ -397,7 +415,7 @@ mod tests {
         let res_str = test_batch_add_object_response();
         let (mut mock_server, client) = get_test_harness();
         let mock = mock_post(&mut mock_server, "/v1/batch/objects", 200, &res_str);
-        let res = client.batch.objects_batch_add(objects, None).await;
+        let res = client.batch.objects_batch_add(objects, None, None).await;
         mock.assert();
         assert!(res.is_ok());
     }
@@ -407,7 +425,7 @@ mod tests {
         let objects = test_create_objects();
         let (mut mock_server, client) = get_test_harness();
         let mock = mock_post(&mut mock_server, "/v1/batch/objects", 404, "");
-        let res = client.batch.objects_batch_add(objects, None).await;
+        let res = client.batch.objects_batch_add(objects, None, None).await;
         mock.assert();
         assert!(res.is_err());
     }
@@ -440,7 +458,7 @@ mod tests {
         let res_str = test_add_references_response();
         let (mut mock_server, client) = get_test_harness();
         let mock = mock_post(&mut mock_server, "/v1/batch/references", 200, &res_str);
-        let res = client.batch.references_batch_add(refs, None).await;
+        let res = client.batch.references_batch_add(refs, None, None).await;
         mock.assert();
         assert!(res.is_ok());
     }
@@ -450,7 +468,7 @@ mod tests {
         let refs = test_references();
         let (mut mock_server, client) = get_test_harness();
         let mock = mock_post(&mut mock_server, "/v1/batch/references", 500, "");
-        let res = client.batch.references_batch_add(refs, None).await;
+        let res = client.batch.references_batch_add(refs, None, None).await;
         mock.assert();
         assert!(res.is_err());
     }
