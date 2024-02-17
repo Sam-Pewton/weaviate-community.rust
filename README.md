@@ -11,7 +11,7 @@
 [circleci-url]: https://app.circleci.com/pipelines/github/Sam-Pewton/weaviate-community.rust
 [github-url]: https://github.com/Sam-Pewton/weaviate-community.rust
 [mit-url]: https://opensource.org/license/mit/
-[rsdocs-url]: https://docs.rs/weaviate-community/0.2.1/weaviate_community/
+[rsdocs-url]: https://docs.rs/weaviate-community/0.2.2/weaviate_community/
 [weaviate-url]: https://weaviate.io/developers/weaviate
 
 Community client for handling Weaviate vector database transactions written in Rust, for Rust.
@@ -27,7 +27,7 @@ cargo add weaviate-community
 
 or add the following to your `Cargo.toml` file
 ```text
-weaviate-community = "0.2.1"
+weaviate-community = "0.2.2"
 ```
 
 # Documentation
