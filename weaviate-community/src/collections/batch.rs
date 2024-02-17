@@ -312,6 +312,7 @@ pub struct BatchAddObjects(Vec<BatchAddObject>);
 /// There should be no need to manually create this object, it forms part of the response from the
 /// batch add endpoint.
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct BatchAddObject {
     pub class: String,
     pub properties: serde_json::Value,

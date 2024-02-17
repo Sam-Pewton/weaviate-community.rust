@@ -18,6 +18,7 @@ pub struct ContextionaryConcept {
 /// This shouldn't be something you create yourself, as it is returned by the appropriate
 /// endpoint when deserialized.
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct IndividualWords {
     pub info: Option<ContextionaryConceptInfo>,
     pub present: Option<bool>,
@@ -56,6 +57,7 @@ pub struct IndividualWord {
 /// This shouldn't be something you create yourself, as it is returned by the appropriate
 /// endpoint when deserialized.
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ConcatenatedWords {
     concatenated_word: ConcatenatedWord,
 }
@@ -66,6 +68,7 @@ pub struct ConcatenatedWords {
 /// This shouldn't be something you create yourself, as it is returned by the appropriate
 /// endpoint when deserialized.
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ConcatenatedWord {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]

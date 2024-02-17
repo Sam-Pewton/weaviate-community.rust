@@ -28,6 +28,7 @@ impl MultiObjects {
 
 /// Object struct used for creating a new Object.
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Object {
     pub class: String,
     pub properties: serde_json::Value,
