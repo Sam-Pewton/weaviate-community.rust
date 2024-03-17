@@ -16,7 +16,7 @@ services:
     - '8080'
     - --scheme
     - http
-    image: semitechnologies/weaviate:1.21.3
+    image: cr.weaviate.io/semitechnologies/weaviate:1.21.3
     container_name: 'weaviate'
     ports:
     - 8080:8080
@@ -50,7 +50,7 @@ services:
     - '8080'
     - --scheme
     - http
-    image: semitechnologies/weaviate:1.21.3
+    image: cr.weaviate.io/semitechnologies/weaviate:1.21.3
     container_name: 'weaviate-local'
     ports:
     - 8080:8080
