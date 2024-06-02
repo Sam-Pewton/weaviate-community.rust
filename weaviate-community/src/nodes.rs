@@ -54,8 +54,8 @@ impl Nodes {
 mod tests {
     use crate::{collections::nodes::MultiNodes, WeaviateClient};
 
-    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
-        let mock_server = mockito::Server::new();
+    async fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new_async().await;
         let mut host = "http://".to_string();
         host.push_str(&mock_server.host_with_port());
         let client = WeaviateClient::builder(&host).build().unwrap();
@@ -159,7 +159,7 @@ mod tests {
         nodes
     }
 
-    fn mock_get(
+    async fn mock_get(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -175,10 +175,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_nodes_status_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let nodes = test_nodes();
         let nodes_str = serde_json::to_string(&nodes).unwrap();
-        let mock = mock_get(&mut mock_server, "/v1/nodes/", 200, &nodes_str);
+        let mock = mock_get(&mut mock_server, "/v1/nodes/", 200, &nodes_str).await;
         let res = client.nodes.get_nodes_status().await;
         mock.assert();
         assert!(res.is_ok());
@@ -187,8 +187,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_nodes_status_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/nodes/", 404, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/nodes/", 404, "").await;
         let res = client.nodes.get_nodes_status().await;
         mock.assert();
         assert!(res.is_err());

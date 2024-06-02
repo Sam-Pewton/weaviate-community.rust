@@ -331,15 +331,15 @@ impl WeaviateClientBuilder {
 mod tests {
     use super::*;
 
-    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
-        let mock_server = mockito::Server::new();
+    async fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new_async().await;
         let mut host = "http://".to_string();
         host.push_str(&mock_server.host_with_port());
         let client = WeaviateClient::builder(&host).build().unwrap();
         (mock_server, client)
     }
 
-    fn mock_get(
+    async fn mock_get(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -355,8 +355,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_is_ready_ok() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/.well-known/ready", 200, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/.well-known/ready", 200, "").await;
         let res = client.is_ready().await;
         mock.assert();
         assert!(res.is_ok());
@@ -364,8 +364,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_is_ready_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/.well-known/ready", 503, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/.well-known/ready", 503, "").await;
         let res = client.is_ready().await;
         mock.assert();
         assert!(res.is_ok());
@@ -374,8 +374,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_is_live_ok() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/.well-known/live", 200, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/.well-known/live", 200, "").await;
         let res = client.is_live().await;
         mock.assert();
         assert!(res.is_ok());
@@ -383,8 +383,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_is_live_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/.well-known/live", 404, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/.well-known/live", 404, "").await;
         let res = client.is_live().await;
         mock.assert();
         assert!(res.is_ok());

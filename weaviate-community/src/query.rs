@@ -210,15 +210,15 @@ mod tests {
     use crate::collections::query::{AggregateBuilder, ExploreBuilder, GetBuilder};
     use crate::WeaviateClient;
 
-    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
-        let mock_server = mockito::Server::new();
+    async fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new_async().await;
         let mut host = "http://".to_string();
         host.push_str(&mock_server.host_with_port());
         let client = WeaviateClient::builder(&host).build().unwrap();
         (mock_server, client)
     }
 
-    fn mock_post(
+    async fn mock_post(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -232,7 +232,7 @@ mod tests {
             .create()
     }
 
-    fn test_get_response() -> String {
+    async fn test_get_response() -> String {
         let data = serde_json::to_string(&serde_json::json!({
             "data": {
                 "Get": {
@@ -284,7 +284,7 @@ mod tests {
         data
     }
 
-    fn test_explore_response() -> String {
+    async fn test_explore_response() -> String {
         let data = serde_json::to_string(&serde_json::json!(
         {
           "data": {
@@ -304,8 +304,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_query_ok() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/graphql", 200, &test_get_response());
+        let (mut mock_server, client) = get_test_harness().await;
+        let exp_res = test_get_response().await;
+        let mock = mock_post(&mut mock_server, "/v1/graphql", 200, &exp_res).await;
         let query = GetBuilder::new(
             "JeopardyQuestion",
             vec![
@@ -332,8 +333,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_query_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/graphql", 422, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/graphql", 422, "").await;
         let query = GetBuilder::new(
             "JeopardyQuestion",
             vec![
@@ -353,13 +354,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_aggregate_query_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_post(
             &mut mock_server,
             "/v1/graphql",
             200,
             &test_aggregate_response(),
-        );
+        ).await;
         let query = AggregateBuilder::new("Article")
             .with_meta_count()
             .with_fields(vec![
@@ -380,8 +381,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_aggregate_query_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/graphql", 422, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/graphql", 422, "").await;
         let query = AggregateBuilder::new("JeopardyQuestion").build();
         let res = client.query.aggregate(query).await;
         mock.assert();
@@ -390,13 +391,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_explore_query_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
+        let exp_res = test_explore_response().await;
         let mock = mock_post(
             &mut mock_server,
             "/v1/graphql",
             200,
-            &test_explore_response(),
-        );
+            &exp_res,
+        ).await;
         let query = ExploreBuilder::new()
             .with_limit(1)
             .with_near_vector("{vector: [-0.36840257,0.13973749,-0.28994447]}")
@@ -409,8 +411,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_explore_query_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/graphql", 422, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/graphql", 422, "").await;
         let query = ExploreBuilder::new().build();
         let res = client.query.explore(query).await;
         mock.assert();
@@ -419,8 +421,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_raw_query_ok() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/graphql", 200, &test_get_response());
+        let (mut mock_server, client) = get_test_harness().await;
+        let exp_res = test_get_response().await;
+        let mock = mock_post(&mut mock_server, "/v1/graphql", 200, &exp_res).await;
         let query = RawQuery::new("{ Get { JeopardyQuestion { question answer points } } }");
         let res = client.query.raw(query).await;
         mock.assert();
@@ -436,8 +439,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_raw_query_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/graphql", 422, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/graphql", 422, "").await;
         let query = RawQuery::new("{ Get { JeopardyQuestion { question answer points } } }");
         let res = client.query.raw(query).await;
         mock.assert();
