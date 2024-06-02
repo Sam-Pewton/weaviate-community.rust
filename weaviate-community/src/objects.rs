@@ -758,15 +758,15 @@ mod tests {
         Reference::new("Test", uuid, "testProperty", "TestTwo", uuid_2)
     }
 
-    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
-        let mock_server = mockito::Server::new();
+    async fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new_async().await;
         let mut host = "http://".to_string();
         host.push_str(&mock_server.host_with_port());
         let client = WeaviateClient::builder(&host).build().unwrap();
         (mock_server, client)
     }
 
-    fn mock_post(
+    async fn mock_post(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -780,7 +780,7 @@ mod tests {
             .create()
     }
 
-    fn mock_put(
+    async fn mock_put(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -794,7 +794,7 @@ mod tests {
             .create()
     }
 
-    fn mock_patch(
+    async fn mock_patch(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -808,7 +808,7 @@ mod tests {
             .create()
     }
 
-    fn mock_head(
+    async fn mock_head(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -822,7 +822,7 @@ mod tests {
             .create()
     }
 
-    fn mock_get(
+    async fn mock_get(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -836,7 +836,7 @@ mod tests {
             .create()
     }
 
-    fn mock_delete(
+    async fn mock_delete(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -849,10 +849,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let objects = test_objects("Test");
         let objects_str = serde_json::to_string(&objects).unwrap();
-        let mock = mock_get(&mut mock_server, "/v1/objects/", 200, &objects_str);
+        let mock = mock_get(&mut mock_server, "/v1/objects/", 200, &objects_str).await;
         let res = client.objects.list(ObjectListParameters::new()).await;
         mock.assert();
         assert!(res.is_ok());
@@ -861,8 +861,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/objects/", 422, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/objects/", 422, "").await;
         let res = client.objects.list(ObjectListParameters::new()).await;
         mock.assert();
         assert!(res.is_err());
@@ -870,10 +870,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let object = test_object("Test");
         let object_str = serde_json::to_string(&object).unwrap();
-        let mock = mock_post(&mut mock_server, "/v1/objects/", 200, &object_str);
+        let mock = mock_post(&mut mock_server, "/v1/objects/", 200, &object_str).await;
         let res = client.objects.create(&object, None).await;
         mock.assert();
         assert!(res.is_ok());
@@ -882,9 +882,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let object = test_object("Test");
-        let mock = mock_post(&mut mock_server, "/v1/objects/", 422, "");
+        let mock = mock_post(&mut mock_server, "/v1/objects/", 422, "").await;
         let res = client.objects.create(&object, None).await;
         mock.assert();
         assert!(res.is_err());
@@ -892,13 +892,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let object = test_object("Test");
         let object_str = serde_json::to_string(&object).unwrap();
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
-        let mock = mock_get(&mut mock_server, &url, 200, &object_str);
+        let mock = mock_get(&mut mock_server, &url, 200, &object_str).await;
         let res = client.objects.get("Test", &uuid, None, None, None).await;
         mock.assert();
         assert!(res.is_ok());
@@ -907,11 +907,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
-        let mock = mock_get(&mut mock_server, &url, 422, "");
+        let mock = mock_get(&mut mock_server, &url, 422, "").await;
         let res = client.objects.get("Test", &uuid, None, None, None).await;
         mock.assert();
         assert!(res.is_err());
@@ -919,11 +919,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_exists_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
-        let mock = mock_head(&mut mock_server, &url, 204, "");
+        let mock = mock_head(&mut mock_server, &url, 204, "").await;
         let res = client.objects.exists("Test", &uuid, None, None).await;
         mock.assert();
         assert!(res.is_ok());
@@ -932,11 +932,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_exists_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
-        let mock = mock_head(&mut mock_server, &url, 422, "");
+        let mock = mock_head(&mut mock_server, &url, 422, "").await;
         let res = client.objects.exists("Test", &uuid, None, None).await;
         mock.assert();
         assert!(res.is_err());
@@ -944,11 +944,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
-        let mock = mock_patch(&mut mock_server, &url, 204, "");
+        let mock = mock_patch(&mut mock_server, &url, 204, "").await;
         let res = client
             .objects
             .update(&serde_json::json![{}], "Test", &uuid, None)
@@ -959,11 +959,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
-        let mock = mock_patch(&mut mock_server, &url, 422, "");
+        let mock = mock_patch(&mut mock_server, &url, 422, "").await;
         let res = client
             .objects
             .update(&serde_json::json![{}], "Test", &uuid, None)
@@ -974,13 +974,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_replace_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let object = test_object("Test");
         let object_str = serde_json::to_string(&object).unwrap();
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
-        let mock = mock_put(&mut mock_server, &url, 200, &object_str);
+        let mock = mock_put(&mut mock_server, &url, 200, &object_str).await;
         let res = client
             .objects
             .replace(&serde_json::json![{}], "Test", &uuid, None)
@@ -991,11 +991,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_replace_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
-        let mock = mock_put(&mut mock_server, &url, 422, "");
+        let mock = mock_put(&mut mock_server, &url, 422, "").await;
         let res = client
             .objects
             .replace(&serde_json::json![{}], "Test", &uuid, None)
@@ -1006,11 +1006,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
-        let mock = mock_delete(&mut mock_server, &url, 204);
+        let mock = mock_delete(&mut mock_server, &url, 204).await;
         let res = client.objects.delete("Test", &uuid, None, None).await;
         mock.assert();
         assert!(res.is_ok());
@@ -1018,11 +1018,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
-        let mock = mock_delete(&mut mock_server, &url, 404);
+        let mock = mock_delete(&mut mock_server, &url, 404).await;
         let res = client.objects.delete("Test", &uuid, None, None).await;
         mock.assert();
         assert!(res.is_err());
@@ -1030,9 +1030,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
-        let mock = mock_post(&mut mock_server, "/v1/objects/validate", 200, "");
+        let mock = mock_post(&mut mock_server, "/v1/objects/validate", 200, "").await;
         let res = client
             .objects
             .validate("Test", &serde_json::json![{}], &uuid)
@@ -1043,9 +1043,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
-        let mock = mock_post(&mut mock_server, "/v1/objects/validate", 404, "");
+        let mock = mock_post(&mut mock_server, "/v1/objects/validate", 404, "").await;
         let res = client
             .objects
             .validate("Test", &serde_json::json![{}], &uuid)
@@ -1056,13 +1056,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_reference_add_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let uuid_2 = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
-        let mock = mock_post(&mut mock_server, &url, 200, "");
+        let mock = mock_post(&mut mock_server, &url, 200, "").await;
         let res = client
             .objects
             .reference_add(test_reference(&uuid, &uuid_2))
@@ -1074,13 +1074,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_reference_add_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let uuid_2 = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
-        let mock = mock_post(&mut mock_server, &url, 404, "");
+        let mock = mock_post(&mut mock_server, &url, 404, "").await;
         let res = client
             .objects
             .reference_add(test_reference(&uuid, &uuid_2))
@@ -1091,7 +1091,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_reference_update_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let object = test_object("Test");
         let object_str = serde_json::to_string(&object).unwrap();
         let uuid = Uuid::new_v4();
@@ -1099,7 +1099,7 @@ mod tests {
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
-        let mock = mock_put(&mut mock_server, &url, 200, &object_str);
+        let mock = mock_put(&mut mock_server, &url, 200, &object_str).await;
         let res = client
             .objects
             .reference_update(
@@ -1118,13 +1118,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_reference_update_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let uuid_2 = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
-        let mock = mock_put(&mut mock_server, &url, 404, "");
+        let mock = mock_put(&mut mock_server, &url, 404, "").await;
         let res = client
             .objects
             .reference_update(
@@ -1143,13 +1143,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_reference_delete_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let uuid_2 = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
-        let mock = mock_delete(&mut mock_server, &url, 204);
+        let mock = mock_delete(&mut mock_server, &url, 204).await;
         let res = client
             .objects
             .reference_delete(test_reference(&uuid, &uuid_2))
@@ -1161,13 +1161,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_reference_delete_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let uuid = Uuid::new_v4();
         let uuid_2 = Uuid::new_v4();
         let mut url = String::from("/v1/objects/Test/");
         url.push_str(&uuid.to_string());
         url.push_str("/references/testProperty");
-        let mock = mock_delete(&mut mock_server, &url, 404);
+        let mock = mock_delete(&mut mock_server, &url, 404).await;
         let res = client
             .objects
             .reference_delete(test_reference(&uuid, &uuid_2))

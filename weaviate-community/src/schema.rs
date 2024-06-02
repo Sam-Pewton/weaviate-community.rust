@@ -387,15 +387,15 @@ mod tests {
         Shards::new(vec![Shard::new("1D3PBjtz9W7r", ShardStatus::READY)])
     }
 
-    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
-        let mock_server = mockito::Server::new();
+    async fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new_async().await;
         let mut host = "http://".to_string();
         host.push_str(&mock_server.host_with_port());
         let client = WeaviateClient::builder(&host).build().unwrap();
         (mock_server, client)
     }
 
-    fn mock_post(
+    async fn mock_post(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -409,7 +409,7 @@ mod tests {
             .create()
     }
 
-    fn mock_put(
+    async fn mock_put(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -423,7 +423,7 @@ mod tests {
             .create()
     }
 
-    fn mock_get(
+    async fn mock_get(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -437,7 +437,7 @@ mod tests {
             .create()
     }
 
-    fn mock_delete(
+    async fn mock_delete(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -452,8 +452,8 @@ mod tests {
     async fn test_create_class_ok() {
         let class = test_class("UnitClass");
         let class_str = serde_json::to_string(&class).unwrap();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/schema/", 200, &class_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/schema/", 200, &class_str).await;
         let res = client.schema.create_class(&class).await;
         mock.assert();
         assert!(res.is_ok());
@@ -463,8 +463,8 @@ mod tests {
     #[tokio::test]
     async fn test_create_class_err() {
         let class = test_class("UnitClass");
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/schema/", 401, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/schema/", 401, "").await;
         let res = client.schema.create_class(&class).await;
         mock.assert();
         assert!(res.is_err());
@@ -474,8 +474,8 @@ mod tests {
     async fn test_get_all_classes_ok() {
         let classes = test_classes();
         let class_str = serde_json::to_string(&classes).unwrap();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/schema/", 200, &class_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/schema/", 200, &class_str).await;
         let res = client.schema.get().await;
         mock.assert();
         assert!(res.is_ok());
@@ -484,8 +484,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_all_classes_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/schema/", 401, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/schema/", 401, "").await;
         let class = client.schema.get().await;
         mock.assert();
         assert!(class.is_err());
@@ -495,8 +495,8 @@ mod tests {
     async fn test_get_single_class_ok() {
         let class = test_class("Test");
         let class_str = serde_json::to_string(&class).unwrap();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/schema/Test", 200, &class_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/schema/Test", 200, &class_str).await;
         let res = client.schema.get_class("Test").await;
         mock.assert();
         assert!(res.is_ok());
@@ -505,8 +505,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_single_class_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/schema/Test", 401, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/schema/Test", 401, "").await;
         let class = client.schema.get_class("Test").await;
         mock.assert();
         assert!(class.is_err());
@@ -514,8 +514,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_delete_class_ok() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_delete(&mut mock_server, "/v1/schema/Test", 200);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_delete(&mut mock_server, "/v1/schema/Test", 200).await;
         let res = client.schema.delete("Test").await;
         mock.assert();
         assert!(res.is_ok());
@@ -524,8 +524,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_delete_class_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_delete(&mut mock_server, "/v1/schema/Test", 401);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_delete(&mut mock_server, "/v1/schema/Test", 401).await;
         let class = client.schema.delete("Test").await;
         mock.assert();
         assert!(class.is_err());
@@ -535,8 +535,8 @@ mod tests {
     async fn test_update_class_ok() {
         let class = test_class("Test");
         let class_str = serde_json::to_string(&class).unwrap();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_put(&mut mock_server, "/v1/schema/Test", 200, &class_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_put(&mut mock_server, "/v1/schema/Test", 200, &class_str).await;
         let res = client.schema.update(&class).await;
         mock.assert();
         assert!(res.is_ok());
@@ -546,8 +546,8 @@ mod tests {
     #[tokio::test]
     async fn test_update_class_err() {
         let class = test_class("Test");
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_put(&mut mock_server, "/v1/schema/Test", 401, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_put(&mut mock_server, "/v1/schema/Test", 401, "").await;
         let res = client.schema.update(&class).await;
         mock.assert();
         assert!(res.is_err());
@@ -557,13 +557,13 @@ mod tests {
     async fn test_add_property_ok() {
         let property = test_property("Test");
         let property_str = serde_json::to_string(&property).unwrap();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_post(
             &mut mock_server,
             "/v1/schema/TestClass/properties",
             200,
             &property_str,
-        );
+        ).await;
         let res = client.schema.add_property("TestClass", &property).await;
         mock.assert();
         assert!(res.is_ok());
@@ -573,8 +573,8 @@ mod tests {
     #[tokio::test]
     async fn test_add_property_err() {
         let property = test_property("Test");
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/schema/TestClass/properties", 401, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/schema/TestClass/properties", 401, "").await;
         let res = client.schema.add_property("TestClass", &property).await;
         mock.assert();
         assert!(res.is_err());
@@ -584,8 +584,8 @@ mod tests {
     async fn test_get_shards_ok() {
         let shards = test_shards();
         let shards_str = serde_json::to_string(&shards.shards).unwrap();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/schema/Test/shards", 200, &shards_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/schema/Test/shards", 200, &shards_str).await;
         let res = client.schema.get_shards("Test").await;
         mock.assert();
         assert!(res.is_ok());
@@ -594,8 +594,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_shards_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/schema/Test/shards", 401, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/schema/Test/shards", 401, "").await;
         let res = client.schema.get_shards("Test").await;
         mock.assert();
         assert!(res.is_err());
@@ -605,13 +605,13 @@ mod tests {
     async fn test_update_class_shard_ok() {
         let shard = test_shard();
         let shard_str = serde_json::to_string(&shard).unwrap();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_put(
             &mut mock_server,
             "/v1/schema/Test/shards/abcd",
             200,
             &shard_str,
-        );
+        ).await;
         let res = client
             .schema
             .update_class_shard("Test", "abcd", ShardStatus::READONLY)
@@ -623,8 +623,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_class_shard_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_put(&mut mock_server, "/v1/schema/Test/shards/abcd", 401, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_put(&mut mock_server, "/v1/schema/Test/shards/abcd", 401, "").await;
         let res = client
             .schema
             .update_class_shard("Test", "abcd", ShardStatus::READONLY)
@@ -637,13 +637,13 @@ mod tests {
     async fn test_list_tenants_ok() {
         let tenants = test_tenants();
         let tenants_str = serde_json::to_string(&tenants.tenants).unwrap();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_get(
             &mut mock_server,
             "/v1/schema/Test/tenants",
             200,
             &tenants_str,
-        );
+        ).await;
         let res = client.schema.list_tenants("Test").await;
         mock.assert();
         assert!(res.is_ok());
@@ -652,8 +652,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_tenants_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/schema/Test/tenants", 422, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/schema/Test/tenants", 422, "").await;
         let res = client.schema.list_tenants("Test").await;
         mock.assert();
         assert!(res.is_err());
@@ -663,13 +663,13 @@ mod tests {
     async fn test_add_tenants_ok() {
         let tenants = test_tenants();
         let tenants_str = serde_json::to_string(&tenants.tenants).unwrap();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_post(
             &mut mock_server,
             "/v1/schema/Test/tenants",
             200,
             &tenants_str,
-        );
+        ).await;
         let res = client.schema.add_tenants("Test", &tenants).await;
         mock.assert();
         assert!(res.is_ok());
@@ -679,8 +679,8 @@ mod tests {
     #[tokio::test]
     async fn test_add_tenants_err() {
         let tenants = test_tenants();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/schema/Test/tenants", 422, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/schema/Test/tenants", 422, "").await;
         let res = client.schema.add_tenants("Test", &tenants).await;
         mock.assert();
         assert!(res.is_err());
@@ -688,8 +688,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_remove_tenants_ok() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_delete(&mut mock_server, "/v1/schema/Test/tenants", 200);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_delete(&mut mock_server, "/v1/schema/Test/tenants", 200).await;
         let res = client
             .schema
             .remove_tenants("Test", &vec!["TestTenant"])
@@ -701,8 +701,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_remove_tenants_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_delete(&mut mock_server, "/v1/schema/Test/tenants", 422);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_delete(&mut mock_server, "/v1/schema/Test/tenants", 422).await;
         let res = client
             .schema
             .remove_tenants("Test", &vec!["TestTenant"])
@@ -715,13 +715,13 @@ mod tests {
     async fn test_update_tenants_ok() {
         let tenants = test_tenants();
         let tenants_str = serde_json::to_string(&tenants.tenants).unwrap();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_put(
             &mut mock_server,
             "/v1/schema/Test/tenants",
             200,
             &tenants_str,
-        );
+        ).await;
         let res = client.schema.update_tenants("Test", &tenants).await;
         mock.assert();
         assert!(res.is_ok());
@@ -731,8 +731,8 @@ mod tests {
     #[tokio::test]
     async fn test_update_tenants_err() {
         let tenants = test_tenants();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_put(&mut mock_server, "/v1/schema/Test/tenants", 422, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_put(&mut mock_server, "/v1/schema/Test/tenants", 422, "").await;
         let res = client.schema.update_tenants("Test", &tenants).await;
         mock.assert();
         assert!(res.is_err());

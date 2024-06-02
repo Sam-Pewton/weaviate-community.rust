@@ -276,8 +276,8 @@ mod tests {
         WeaviateClient,
     };
 
-    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
-        let mock_server = mockito::Server::new();
+    async fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new_async().await;
         let mut host = "http://".to_string();
         host.push_str(&mock_server.host_with_port());
         let client = WeaviateClient::builder(&host).build().unwrap();
@@ -381,7 +381,7 @@ mod tests {
         .unwrap()
     }
 
-    fn mock_post(
+    async fn mock_post(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -395,7 +395,7 @@ mod tests {
             .create()
     }
 
-    fn mock_delete(
+    async fn mock_delete(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -413,8 +413,8 @@ mod tests {
     async fn test_objects_batch_add_ok() {
         let objects = test_create_objects();
         let res_str = test_batch_add_object_response();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/batch/objects", 200, &res_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/batch/objects", 200, &res_str).await;
         let res = client.batch.objects_batch_add(objects, None, None).await;
         mock.assert();
         assert!(res.is_ok());
@@ -423,8 +423,8 @@ mod tests {
     #[tokio::test]
     async fn test_objects_batch_add_err() {
         let objects = test_create_objects();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/batch/objects", 404, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/batch/objects", 404, "").await;
         let res = client.batch.objects_batch_add(objects, None, None).await;
         mock.assert();
         assert!(res.is_err());
@@ -435,8 +435,8 @@ mod tests {
         let req = test_delete_objects();
         let out = test_delete_response();
         let res_str = serde_json::to_string(&out).unwrap();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_delete(&mut mock_server, "/v1/batch/objects", 200, &res_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_delete(&mut mock_server, "/v1/batch/objects", 200, &res_str).await;
         let res = client.batch.objects_batch_delete(req, None, None).await;
         mock.assert();
         assert!(res.is_ok());
@@ -445,8 +445,8 @@ mod tests {
     #[tokio::test]
     async fn test_objects_batch_delete_err() {
         let req = test_delete_objects();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_delete(&mut mock_server, "/v1/batch/objects", 401, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_delete(&mut mock_server, "/v1/batch/objects", 401, "").await;
         let res = client.batch.objects_batch_delete(req, None, None).await;
         mock.assert();
         assert!(res.is_err());
@@ -456,8 +456,8 @@ mod tests {
     async fn test_references_batch_add_ok() {
         let refs = test_references();
         let res_str = test_add_references_response();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/batch/references", 200, &res_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/batch/references", 200, &res_str).await;
         let res = client.batch.references_batch_add(refs, None, None).await;
         mock.assert();
         assert!(res.is_ok());
@@ -466,8 +466,8 @@ mod tests {
     #[tokio::test]
     async fn test_references_batch_add_err() {
         let refs = test_references();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/batch/references", 500, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/batch/references", 500, "").await;
         let res = client.batch.references_batch_add(refs, None, None).await;
         mock.assert();
         assert!(res.is_err());

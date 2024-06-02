@@ -133,8 +133,8 @@ mod tests {
         }
     };
 
-    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
-        let mock_server = mockito::Server::new();
+    async fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new_async().await;
         let mut host = "http://".to_string();
         host.push_str(&mock_server.host_with_port());
         let client = WeaviateClient::builder(&host).build().unwrap();
@@ -154,7 +154,7 @@ mod tests {
         }).unwrap()
     }
 
-    fn mock_post(
+    async fn mock_post(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -168,7 +168,7 @@ mod tests {
             .create()
     }
 
-    fn mock_get(
+    async fn mock_get(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -184,13 +184,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_concept_ok() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_get(
             &mut mock_server,
             "/v1/modules/text2vec-contextionary/concepts/test",
             200,
             &get_mock_concept_response(),
-        );
+        ).await;
         let res = client.modules.contextionary_get_concept("test").await;
         mock.assert();
         assert!(res.is_ok());
@@ -198,13 +198,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_concept_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_get(
             &mut mock_server,
             "/v1/modules/text2vec-contextionary/concepts/test",
             401,
             "",
-        );
+        ).await;
         let res = client.modules.contextionary_get_concept("test").await;
         mock.assert();
         assert!(res.is_err());
@@ -214,13 +214,13 @@ mod tests {
     async fn test_extend_ok() {
         let ext = ContextionaryExtension::new("test", "test", 1.0);
         let ext_str = serde_json::to_string(&ext).unwrap();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_post(
             &mut mock_server,
             "/v1/modules/text2vec-contextionary/extensions",
             200,
             &ext_str,
-        );
+        ).await;
         let res = client.modules.contextionary_extend(ext).await;
         mock.assert();
         assert!(res.is_ok());
@@ -228,13 +228,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_extend_err() {
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_post(
             &mut mock_server,
             "/v1/modules/text2vec-contextionary/extensions",
             401,
             "",
-        );
+        ).await;
         let res = client.modules.contextionary_extend(
             ContextionaryExtension::new("test", "test", 1.0)
         ).await;

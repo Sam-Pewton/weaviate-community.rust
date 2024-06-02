@@ -49,7 +49,7 @@ impl Oidc {
 mod tests {
     use crate::{collections::oidc::OidcResponse, WeaviateClient};
 
-    fn test_oidc_response() -> OidcResponse {
+    async fn test_oidc_response() -> OidcResponse {
         let response: OidcResponse = serde_json::from_value(
             serde_json::json!({
                 "clientId": "wcs",
@@ -59,15 +59,15 @@ mod tests {
         response
     }
 
-    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
-        let mock_server = mockito::Server::new();
+    async fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new_async().await;
         let mut host = "http://".to_string();
         host.push_str(&mock_server.host_with_port());
         let client = WeaviateClient::builder(&host).build().unwrap();
         (mock_server, client)
     }
 
-    fn mock_get(
+    async fn mock_get(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -83,10 +83,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_open_id_configuration_ok() {
-        let resp = test_oidc_response();
+        let resp = test_oidc_response().await;
         let resp_str = serde_json::to_string(&resp).unwrap();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/openid-configuration", 200, &resp_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/openid-configuration", 200, &resp_str).await;
         let res = client.oidc.get_open_id_configuration().await;
         mock.assert();
         assert!(res.is_ok());
@@ -95,8 +95,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_open_id_configuration_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/openid-configuration", 404, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/openid-configuration", 404, "").await;
         let res = client.oidc.get_open_id_configuration().await;
         mock.assert();
         assert!(res.is_err());

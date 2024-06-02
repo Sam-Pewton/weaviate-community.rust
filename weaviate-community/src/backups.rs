@@ -205,8 +205,8 @@ mod tests {
         WeaviateClient,
     };
 
-    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
-        let mock_server = mockito::Server::new();
+    async fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new_async().await;
         let mut host = "http://".to_string();
         host.push_str(&mock_server.host_with_port());
         let client = WeaviateClient::builder(&host).build().unwrap();
@@ -240,7 +240,7 @@ mod tests {
         }
     }
 
-    fn mock_get(
+    async fn mock_get(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -253,7 +253,7 @@ mod tests {
             .create()
     }
 
-    fn mock_post(
+    async fn mock_post(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -271,13 +271,13 @@ mod tests {
     async fn test_get_backup_status_ok() {
         let out = test_backup_status(BackupStatus::SUCCESS);
         let out_str = serde_json::to_string(&out).unwrap();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_get(
             &mut mock_server,
             "/v1/backups/filesystem/abcd",
             200,
             &out_str,
-        );
+        ).await;
         let res = client
             .backups
             .get_backup_status(&BackupBackends::FILESYSTEM, "abcd", false)
@@ -288,8 +288,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_backup_status_err() {
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, "/v1/backups/filesystem/abcd", 404, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, "/v1/backups/filesystem/abcd", 404, "").await;
         let res = client
             .backups
             .get_backup_status(&BackupBackends::FILESYSTEM, "abcd", false)
@@ -303,8 +303,8 @@ mod tests {
         let req = test_create_backup_request();
         let out = test_backup_response(BackupStatus::STARTED);
         let out_str = serde_json::to_string(&out).unwrap();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/backups/filesystem", 200, &out_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/backups/filesystem", 200, &out_str).await;
         let res = client
             .backups
             .create(&BackupBackends::FILESYSTEM, &req, false)
@@ -317,8 +317,8 @@ mod tests {
     #[tokio::test]
     async fn test_create_backup_err() {
         let req = test_create_backup_request();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/backups/filesystem", 404, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/backups/filesystem", 404, "").await;
         let res = client
             .backups
             .create(&BackupBackends::FILESYSTEM, &req, false)
@@ -334,14 +334,14 @@ mod tests {
         let out_str = serde_json::to_string(&out).unwrap();
         let out_two = test_backup_status(BackupStatus::SUCCESS);
         let out_two_str = serde_json::to_string(&out_two).unwrap();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/backups/filesystem", 200, &out_str);
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/backups/filesystem", 200, &out_str).await;
         let mock2 = mock_get(
             &mut mock_server,
             "/v1/backups/filesystem/abcd",
             200,
             &out_two_str,
-        );
+        ).await;
         let res = client
             .backups
             .create(&BackupBackends::FILESYSTEM, &req, true)
@@ -355,8 +355,8 @@ mod tests {
     #[tokio::test]
     async fn test_create_backup_wait_err() {
         let req = test_create_backup_request();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/backups/filesystem", 404, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/backups/filesystem", 404, "").await;
         let res = client
             .backups
             .create(&BackupBackends::FILESYSTEM, &req, true)
@@ -370,13 +370,13 @@ mod tests {
         let req = test_restore_backup_request();
         let out = test_backup_response(BackupStatus::STARTED);
         let out_str = serde_json::to_string(&out).unwrap();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_post(
             &mut mock_server,
             "/v1/backups/filesystem/abcd/restore",
             200,
             &out_str,
-        );
+        ).await;
         let res = client
             .backups
             .restore(&BackupBackends::FILESYSTEM, "abcd", &req, false)
@@ -389,13 +389,13 @@ mod tests {
     #[tokio::test]
     async fn test_restore_backup_err() {
         let req = test_restore_backup_request();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_post(
             &mut mock_server,
             "/v1/backups/filesystem/abcd/restore",
             404,
             "",
-        );
+        ).await;
         let res = client
             .backups
             .restore(&BackupBackends::FILESYSTEM, "abcd", &req, false)
@@ -411,19 +411,19 @@ mod tests {
         let out_str = serde_json::to_string(&out).unwrap();
         let out_two = test_backup_status(BackupStatus::SUCCESS);
         let out_two_str = serde_json::to_string(&out_two).unwrap();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_post(
             &mut mock_server,
             "/v1/backups/filesystem/abcd/restore",
             200,
             &out_str,
-        );
+        ).await;
         let mock2 = mock_get(
             &mut mock_server,
             "/v1/backups/filesystem/abcd/restore",
             200,
             &out_two_str,
-        );
+        ).await;
         let res = client
             .backups
             .restore(&BackupBackends::FILESYSTEM, "abcd", &req, true)
@@ -437,13 +437,13 @@ mod tests {
     #[tokio::test]
     async fn test_restore_backup_wait_err() {
         let req = test_restore_backup_request();
-        let (mut mock_server, client) = get_test_harness();
+        let (mut mock_server, client) = get_test_harness().await;
         let mock = mock_post(
             &mut mock_server,
             "/v1/backups/filesystem/abcd/restore",
             404,
             "",
-        );
+        ).await;
         let res = client
             .backups
             .restore(&BackupBackends::FILESYSTEM, "abcd", &req, true)

@@ -143,8 +143,8 @@ mod tests {
         collections::classification::{ClassificationRequest, ClassificationType}
     };
 
-    fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
-        let mock_server = mockito::Server::new();
+    async fn get_test_harness() -> (mockito::ServerGuard, WeaviateClient) {
+        let mock_server = mockito::Server::new_async().await;
         let mut host = "http://".to_string();
         host.push_str(&mock_server.host_with_port());
         let client = WeaviateClient::builder(&host).build().unwrap();
@@ -166,7 +166,7 @@ mod tests {
             .build()
     }
 
-    fn mock_post(
+    async fn mock_post(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -180,7 +180,7 @@ mod tests {
             .create()
     }
 
-    fn mock_get(
+    async fn mock_get(
         server: &mut mockito::ServerGuard,
         endpoint: &str,
         status_code: usize,
@@ -200,8 +200,8 @@ mod tests {
     #[tokio::test]
     async fn test_classification_schedule_err() {
         let req = test_classification_req();
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_post(&mut mock_server, "/v1/classifications/", 401, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_post(&mut mock_server, "/v1/classifications/", 401, "").await;
         let res = client.classification.schedule(req).await;
         mock.assert();
         assert!(res.is_err());
@@ -215,8 +215,8 @@ mod tests {
         let uuid = Uuid::new_v4();
         let mut url = String::from("/v1/classifications/");
         url.push_str(&uuid.to_string());
-        let (mut mock_server, client) = get_test_harness();
-        let mock = mock_get(&mut mock_server, &url, 401, "");
+        let (mut mock_server, client) = get_test_harness().await;
+        let mock = mock_get(&mut mock_server, &url, 401, "").await;
         let res = client.classification.get(uuid).await;
         mock.assert();
         assert!(res.is_err());
